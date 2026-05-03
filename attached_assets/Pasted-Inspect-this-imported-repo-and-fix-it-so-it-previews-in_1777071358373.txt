@@ -1,0 +1,102 @@
+Inspect this imported repo and fix it so it previews in Replit immediately. Do not do a broad redesign first. Make the minimum runtime/config changes needed so the app loads in Preview on port 3000 and the admin login works.
+
+Repo context:
+This is a Candy Crackzzz app with two important parts:
+1. frontend at artifacts/candy-crackzzz
+2. backend at artifacts/api-server
+
+The current failure is not just a cosmetic issue. The app white-screens / fails to preview because the frontend is trying to call /api/cc/*, while the real backend routes live in the separate api-server app, and Replit/startup wiring is broken or missing.
+
+What to inspect first:
+- artifacts/candy-crackzzz/src/lib/api.ts
+- artifacts/candy-crackzzz/src/context/AuthContextBootstrap.tsx
+- artifacts/candy-crackzzz/src/context/AppContext.tsx
+- artifacts/candy-crackzzz/vite.config.ts
+- artifacts/api-server/src/app.ts
+- artifacts/api-server/src/index.ts
+- repo root package.json
+- .gitignore
+- .replit
+
+Expected root cause:
+- frontend calls /api/cc/*
+- backend exposes those routes from api-server under /api
+- frontend Vite config is not proxying /api to the api-server
+- .replit may be missing or invalid
+- api-server currently may require PORT and fail if missing
+- Replit import may not know how to start both processes together
+
+Make these fixes:
+
+1. Frontend proxy
+Update artifacts/candy-crackzzz/vite.config.ts so that:
+- PORT defaults to 3000
+- API_PORT defaults to 3001
+- server.proxy forwards "/api" to http://127.0.0.1:3001
+- preview.proxy also forwards "/api" to http://127.0.0.1:3001
+
+2. Backend default port
+Update artifacts/api-server/src/index.ts so PORT defaults to 3001 instead of throwing when missing.
+
+3. Replit startup script
+Create scripts/start-candy-preview.sh that:
+- runs pnpm install if needed
+- starts api-server on port 3001
+- starts candy-crackzzz frontend on port 3000
+- uses CANDY_FORCE_FILE_STORAGE=1 for local preview if needed
+- keeps both processes running properly for Replit Preview
+
+4. Restore .replit
+Create or fix a tracked .replit file so Replit can run and deploy the project.
+It should:
+- run bash scripts/start-candy-preview.sh
+- expose port 3000
+- include a deployment section
+- use autoscale deployment
+- build both api-server and candy-crackzzz
+- run api-server plus frontend preview/serve in deployment
+
+5. Stop ignoring .replit
+If .gitignore ignores .replit, remove that ignore line so the config is tracked.
+
+6. Do not break app features
+Do not remove or redesign the current route/page variants unless needed for compile errors.
+Keep the current app features intact:
+- rewards
+- referrals
+- messages
+- notifications
+- admin dashboard
+- admin orders
+- order success page
+- customer rewards page
+
+7. Verify these routes load after the fix:
+- /
+- /rewards
+- /admin/login
+- /admin
+- /admin/orders
+
+8. Verify frontend can reach backend
+Specifically verify that /api/cc/bootstrap returns JSON through the frontend proxy and that the app no longer white-screens because auth/bootstrap fails.
+
+9. Admin login
+Make sure the seeded owner/admin login works immediately after preview starts.
+Expected temporary dev login:
+username: owner
+password: CandyCrackzzzTemp1!
+
+10. Final output
+After fixing, give me:
+- root cause
+- files changed
+- exact run behavior in Replit
+- whether Preview works now
+- whether Publish should work now
+- exact admin login credentials
+
+Important:
+Do not stop at diagnosis only.
+Actually make the code/config changes so the app runs in Preview right now.
+Keep changes small and targeted to runtime, preview, proxy, startup, and admin bootstrap.

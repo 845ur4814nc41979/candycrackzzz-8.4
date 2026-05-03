@@ -1,0 +1,128 @@
+Add the uploaded generated photos as default stock/placeholder images for the new Candy CrackZZZ storefront sections.
+
+Goal:
+I am uploading several generated images for Dirty Sodazzz and Donutzzz. Add them into the app as stock images in the proper fields so the new storefront sections have nice default pictures until I replace them with real photos later.
+
+Important:
+Do not break existing uploaded image behavior.
+Do not remove the ability for admin to click an image and replace it later.
+Do not hard-code images in a way that prevents admin replacement.
+Do not remove existing product images.
+Do not use broken image links.
+Do not expose uploaded file paths in customer-facing text.
+
+Uploaded image groups:
+1. Dirty Sodazzz stock images
+2. Donutzzz stock images
+
+Use these images as default stock images for the sample products created for the new sections.
+
+Dirty Sodazzz sample products and image assignment:
+- Dirty Dr Pepper Sodazzz: use the dark cola / Dr Pepper / cherry cream dirty soda image.
+- Strawberry Cream Dirty Sodazzz: use the pink strawberry cream dirty soda image.
+- Blue Raspberry Dirty Sodazzz: use the blue raspberry dirty soda image.
+- Tropical Lime Pineapple Dirty Sodazzz: use the tropical lime / pineapple dirty soda image.
+
+Donutzzz sample products and image assignment:
+- Candy Crunch Mini Donutzzz: use the chocolate glaze donuts with mixed candy toppings image.
+- Strawberry Gummy Mini Donutzzz: use the pink glaze donuts with gummy/candy toppings image.
+- Blue Raspberry Rock Candy Donutzzz: use the blue glaze donuts with pink/blue rock candy image.
+- Chocolate Cookie Crunch Donutzzz: use the chocolate/caramel donuts with cookie/candy toppings image.
+
+Where to add images:
+Use the correct existing product image field, likely one of:
+- imageUrl
+- image
+- imageBase64
+- imageData
+- photoUrl
+
+Inspect the current product data model first and use the field the app already uses for product photos.
+
+If the uploaded files are available as local project assets:
+- Copy them into a public/static asset folder such as:
+  artifacts/candy-crackzzz/public/images/stock/
+  or the existing public asset directory used by the app.
+- Use stable app-relative URLs like:
+  /images/stock/dirty-dr-pepper-sodazzz.png
+  /images/stock/strawberry-cream-dirty-sodazzz.png
+  /images/stock/blue-raspberry-dirty-sodazzz.png
+  /images/stock/tropical-lime-pineapple-dirty-sodazzz.png
+  /images/stock/candy-crunch-mini-donutzzz.png
+  /images/stock/strawberry-gummy-mini-donutzzz.png
+  /images/stock/blue-raspberry-rock-candy-donutzzz.png
+  /images/stock/chocolate-cookie-crunch-donutzzz.png
+
+If the app stores product images as base64/localStorage/file-storage:
+- Import or convert the uploaded images using the same existing image system.
+- Keep the image editable from admin.
+- Keep the image replacement flow working.
+
+Admin behavior:
+In Admin Productzzz, these sample products should show the assigned stock image.
+Admin should be able to:
+- click the image
+- upload/replace with camera or photo library
+- save the new image
+- refresh and see the replacement persist
+- reset to stock image if a reset option exists, but do not create reset if it is complicated
+
+Customer storefront behavior:
+On the public storefront/menu:
+- Donutzzz section should show the Donutzzz stock images.
+- Dirty Sodazzz section should show the Dirty Sodazzz stock images.
+- Images should be cropped nicely and not distorted.
+- No broken image icon should appear.
+- Images should load on mobile and desktop.
+
+Product card image styling:
+- Use object-fit: cover.
+- Keep aspect ratio consistent.
+- Use rounded corners consistent with current product cards.
+- Provide alt text from the product name.
+
+Fallback behavior:
+If an image fails to load:
+- Show the existing Candy CrackZZZ placeholder.
+- Do not crash.
+- Do not white screen.
+
+Do not change internal names unnecessarily:
+- Do not rename database fields.
+- Do not rename product variables.
+- Do not rename API routes.
+- Do not change cart/order logic.
+
+Testing:
+1. Upload all Dirty Sodazzz and Donutzzz images.
+2. Confirm images are copied or saved into the correct app asset/storage location.
+3. Confirm Dirty Dr Pepper Sodazzz shows the dark cola image.
+4. Confirm Strawberry Cream Dirty Sodazzz shows the pink strawberry image.
+5. Confirm Blue Raspberry Dirty Sodazzz shows the blue image.
+6. Confirm Tropical Lime Pineapple Dirty Sodazzz shows the tropical green/yellow image.
+7. Confirm Candy Crunch Mini Donutzzz shows the chocolate mixed candy donut image.
+8. Confirm Strawberry Gummy Mini Donutzzz shows the pink gummy donut image.
+9. Confirm Blue Raspberry Rock Candy Donutzzz shows the blue rock candy donut image.
+10. Confirm Chocolate Cookie Crunch Donutzzz shows the chocolate/cookie donut image.
+11. Confirm admin can replace each image.
+12. Confirm replacement image persists after refresh.
+13. Confirm public storefront shows images correctly.
+14. Confirm cart still works with these products.
+15. Confirm no broken images.
+16. Confirm no white screen and no red console errors.
+17. Run:
+pnpm --filter @workspace/candy-crackzzz run build
+pnpm --filter @workspace/api-server run build
+
+Final report:
+Explain:
+1. Where the uploaded stock images were stored.
+2. Which image was assigned to each Dirty Sodazzz product.
+3. Which image was assigned to each Donutzzz product.
+4. Which product image field the app uses.
+5. How admin can replace the images later.
+6. Whether images show correctly on public storefront.
+7. Whether cart/checkout still works.
+8. Files changed.
+9. Tests run.
+10. Whether frontend/API builds passed.

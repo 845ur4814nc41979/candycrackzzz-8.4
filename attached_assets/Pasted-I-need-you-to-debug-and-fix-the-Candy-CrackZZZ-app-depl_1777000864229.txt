@@ -1,0 +1,368 @@
+I need you to debug and fix the Candy CrackZZZ app deployment and production behavior.
+
+The app publishes/builds, but the live/published version is not working correctly. I need messaging and notifications working, and I cannot currently log into the admin side.
+
+Please treat this as a production deployment issue, not just a local preview issue.
+
+Main goals:
+
+1. The live published Candy CrackZZZ app must allow the correct admin user to log in.
+2. The app must not show a first-time admin setup screen to new visitors.
+3. The app must not allow a random public visitor to create the first admin account.
+4. The admin side must stay protected behind login.
+5. Messaging must work in the published/live app.
+6. Notifications must work in the published/live app.
+7. Menu/product edits must persist after refresh and across devices.
+8. Payment method settings must persist after refresh and across devices.
+9. The customer-facing storefront must remain public.
+10. The vendor/admin dashboard must not be publicly accessible without a valid login.
+
+Please investigate the full app structure first before making changes.
+
+Check these areas:
+
+- Frontend routes
+- Admin login page
+- Admin setup page
+- Auth logic
+- API route calls
+- Notification logic
+- Messaging logic
+- Menu/product state saving
+- Payment settings saving
+- Backend server startup
+- Deployment run command
+- Replit Autoscale production behavior
+- Any Vite dev-only middleware
+- Any localStorage-only data that should actually be stored server-side
+
+Important issue to check:
+
+If the frontend is calling routes like:
+
+/_cc/api/*
+
+please verify whether those routes exist in the deployed production app.
+
+If those routes only work during Vite dev or preview mode, then they will not work properly after publishing. In that case, move or expose those routes through the real backend server so the published app can reach them.
+
+The backend should handle production versions of:
+
+- Admin login
+- Admin session/token validation
+- Admin logout if present
+- Menu item save/load
+- Payment settings save/load
+- Messaging send/load
+- Notifications create/load/read
+- Any customer order or checkout notification logic
+
+Admin login requirements:
+
+Create or verify a preset admin login system.
+
+Do not let the first visitor create the admin account.
+
+The app should use preset admin credentials from environment variables or server config.
+
+Preferred environment variable names:
+
+ADMIN_USERNAME
+ADMIN_PASSWORD
+SESSION_SECRET
+
+If these do not exist, add support for them.
+
+If environment variables are missing in development, allow safe fallback credentials only for local development, but make it very clear where they are located and how to change them.
+
+Do not hard-code real production passwords into the frontend.
+
+Do not expose the admin password in browser code.
+
+Do not store the admin password in localStorage.
+
+Do not let the frontend decide whether someone is truly admin without server validation.
+
+The frontend can store a session token if needed, but the backend must validate it.
+
+Admin flow should work like this:
+
+1. User goes to admin login.
+2. User enters preset username and password.
+3. Frontend sends credentials to backend login endpoint.
+4. Backend verifies credentials.
+5. Backend returns a secure session/token.
+6. Frontend stores the session/token.
+7. Admin pages call the backend to verify the session/token.
+8. If token/session is invalid, the user is sent back to login.
+9. If token/session is valid, the admin dashboard opens.
+10. Refreshing the page should not immediately kick out a valid logged-in admin unless the session expired.
+
+Admin setup screen issue:
+
+Find any route, component, or logic that displays an initial admin setup screen.
+
+Remove it or disable it for production.
+
+The live app should never ask a public visitor to create the first admin account.
+
+If there is a setup component that is useful for local development, it must be gated behind development mode only, not production.
+
+Messaging requirements:
+
+Messaging must work in the live published app.
+
+Please check whether messages are currently saved in localStorage, fake memory, mock data, frontend-only state, or Vite middleware.
+
+If messages are not saved through the production backend, move them to backend API routes.
+
+Messaging should support at minimum:
+
+- Customer or visitor submits a message
+- Admin can view received messages
+- Admin can mark messages as read if that feature exists
+- New message creates a notification
+- Messages persist after refresh
+- Messages are available across devices/browsers
+
+Notification requirements:
+
+Notifications must work in the live published app.
+
+Please check whether notifications are currently frontend-only, mock data, localStorage-only, or connected to dev-only API routes.
+
+Notifications should support at minimum:
+
+- New order notification if order/checkout exists
+- New customer message notification
+- Admin can view notifications
+- Admin can mark notifications as read if that feature exists
+- Notification count updates correctly
+- Notifications persist after refresh
+- Notifications are available across devices/browsers
+
+Data persistence requirements:
+
+Any data that matters for the business should not be localStorage-only in production.
+
+This includes:
+
+- Menu items
+- Product images or image URLs
+- Product names
+- Product descriptions
+- Prices
+- Availability toggles
+- Payment method toggles
+- Payment usernames/payment instructions
+- Messages
+- Notifications
+- Orders if present
+- Admin session data if needed
+
+If the app does not currently have a database, create a simple production-safe server-side persistence method that works on Replit.
+
+Use the existing project style if there is already a database or storage file.
+
+If there is no database currently configured, use one of these approaches:
+
+Option A: Use the existing backend storage system if one already exists.
+
+Option B: Add a simple JSON file store on the backend for now, organized clearly, such as:
+
+server/data/menu.json
+server/data/settings.json
+server/data/messages.json
+server/data/notifications.json
+
+Make sure file writes are safe and do not crash the app if files do not exist yet.
+
+Add seed/default data if needed.
+
+Do not keep production business data only in frontend localStorage.
+
+API requirements:
+
+Create or verify production backend endpoints similar to these, adjusted to match the existing app structure:
+
+POST /api/admin/login
+GET /api/admin/me
+POST /api/admin/logout
+
+GET /api/menu
+POST /api/menu
+PUT /api/menu/:id
+DELETE /api/menu/:id
+
+GET /api/payment-settings
+POST /api/payment-settings
+
+GET /api/messages
+POST /api/messages
+POST /api/messages/:id/read
+
+GET /api/notifications
+POST /api/notifications
+POST /api/notifications/:id/read
+POST /api/notifications/read-all
+
+If the existing app already uses /_cc/api/*, either:
+
+1. Keep those paths but serve them from the real production backend, or
+2. Update the frontend to call the new production backend routes consistently.
+
+Do not leave the frontend calling routes that only exist in dev/preview mode.
+
+Frontend requirements:
+
+Update the frontend API client so it uses the correct backend base URL in production.
+
+If the frontend and backend are served from the same Autoscale app, use same-origin relative API paths like:
+
+/api/admin/login
+
+or the correct existing path.
+
+Make sure CORS does not block requests if the frontend and backend are on different origins.
+
+Make sure fetch requests include the correct headers.
+
+If using bearer tokens, include Authorization headers.
+
+If using cookies, configure credentials correctly.
+
+Production deployment requirements:
+
+Check the Replit deployment setup.
+
+The app should use Autoscale, not Static, because this app needs a backend.
+
+Confirm the correct production run command.
+
+The production run command should start the backend server and serve the built frontend correctly.
+
+Please inspect package.json files and existing scripts.
+
+The final production command should not only run Vite preview if the backend APIs are needed elsewhere.
+
+The backend should serve the built frontend files or correctly proxy to them.
+
+Make sure the deployed app has:
+
+- A working frontend
+- A working backend
+- Working API routes
+- Working admin login
+- Working messaging
+- Working notifications
+- Persistent settings/data
+
+Build/test requirements:
+
+After making changes, please run:
+
+- install if needed
+- typecheck if available
+- lint if available
+- build
+- production start command
+
+Then test manually or with curl/fetch where possible:
+
+1. Load customer storefront.
+2. Load admin login page.
+3. Confirm admin setup screen does not appear in production.
+4. Attempt login with wrong credentials and confirm it fails.
+5. Attempt login with preset credentials and confirm it succeeds.
+6. Refresh admin dashboard and confirm it remains accessible if session is valid.
+7. Submit a customer message.
+8. Confirm admin can see the message.
+9. Confirm a notification appears for the new message.
+10. Mark notification as read and confirm it updates.
+11. Change a menu item or price in admin.
+12. Refresh the page and confirm the change persists.
+13. Open another browser/session if possible and confirm the saved data is still there.
+14. Toggle a payment method on/off and confirm it persists.
+15. Confirm customer-facing storefront does not expose admin tools.
+
+Security requirements:
+
+Do not expose admin credentials in frontend code.
+
+Do not commit real production passwords.
+
+Use environment variables when possible.
+
+Do not allow admin setup in production.
+
+Do not allow unauthenticated users to access admin APIs.
+
+Protect all write routes.
+
+Customer-facing read routes can remain public where appropriate.
+
+Admin-only routes must require valid authentication.
+
+Files to inspect carefully:
+
+- .replit
+- package.json files
+- frontend package.json
+- backend/api-server package.json
+- Vite config files
+- server entry files
+- API route files
+- admin login components
+- admin setup components
+- auth utilities
+- notification components
+- messaging components
+- data storage utilities
+- deployment/start scripts
+- any files that mention /_cc/api
+- any files that mention localStorage
+- any files that mention admin setup
+- any files that mention notifications
+- any files that mention messages
+
+Search the codebase for these terms:
+
+/_cc/api
+admin setup
+setup admin
+create admin
+localStorage
+notifications
+messages
+payment
+login
+auth
+session
+token
+ADMIN_USERNAME
+ADMIN_PASSWORD
+VITE
+api-server
+middleware
+
+Please fix the root cause, not just the visible error.
+
+At the end, report back with:
+
+1. What was broken.
+2. Why it worked locally or in preview but failed after publishing.
+3. What files you changed.
+4. What API routes now exist.
+5. What environment variables I need to set in Replit Secrets.
+6. What the correct admin login username/password source is.
+7. What the correct Replit deployment type should be.
+8. What the correct production run command should be.
+9. Whether messaging was verified.
+10. Whether notifications were verified.
+11. Whether admin login was verified.
+12. Whether menu/payment settings persist after refresh.
+13. Any remaining limitations or next recommended fixes.
+
+The final result I need is:
+
+The published Candy CrackZZZ app works live on Replit Autoscale, customers can use the storefront, the admin can log in with preset credentials, no public visitor can create the admin account, messaging works, notifications work, and admin changes persist.

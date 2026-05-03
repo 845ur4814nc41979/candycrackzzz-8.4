@@ -1,0 +1,66 @@
+No, do not wire up real-time order notifications yet.
+
+The app is still showing a white screen, so all new feature work needs to stop until the white screen is fixed.
+
+Please focus only on making the app load reliably first.
+
+Priority order:
+
+1. Fix the blank white screen.
+2. Confirm Replit preview loads the customer home page.
+3. Confirm admin login loads.
+4. Confirm /api/cc/bootstrap works.
+5. Confirm both frontend and backend are running correctly.
+6. Confirm typecheck/build passes.
+7. Only after that, we can add directions, merch image upload, smart descriptions, chatbot, and optional real-time order feed later.
+
+Do not add:
+- real-time order notification feed
+- WebSockets
+- polling
+- live dashboard updates
+- chatbot
+- maps
+- image upload
+- smart description generator
+- new admin dashboard widgets
+
+until the white screen is fully fixed.
+
+Please diagnose the white screen now. Check:
+- browser console errors
+- Replit console errors
+- Vite compile errors
+- TypeScript errors
+- missing imports
+- broken route imports
+- AppContext loading behavior
+- AuthProvider loading behavior
+- /api/cc/bootstrap response
+- API server on port 3001
+- frontend on port 5000
+- Vite proxy from /api to port 3001
+- whether AppContext is returning null forever
+- whether a failed bootstrap request is preventing the app from rendering
+- whether any page import crashes at startup
+
+Make the app show a visible loading/error/fallback screen instead of a blank white screen.
+
+Success criteria before asking me about any feature:
+- Home page loads.
+- Menu page loads.
+- Merch page loads.
+- Admin login loads.
+- Admin dashboard loads after login.
+- /api/cc/bootstrap returns data.
+- Refreshing the page does not white screen.
+- App works with no OpenAI key.
+- App works with no Google Maps key.
+- pnpm run typecheck passes.
+- pnpm run build passes.
+
+After the white screen is fixed, give me a report explaining:
+1. What caused the white screen.
+2. What files were changed.
+3. What test confirms it is fixed.
+4. What feature work is still pending.

@@ -1,0 +1,104 @@
+Before adding any new features, fix the blank white screen / app not loading problem in this Candy CrackZZZ repo.
+
+Do not work on chatbot, directions, images, merch, or description generator yet. First make the app reliably load in Replit preview and published deployment.
+
+Repo structure:
+Frontend app: artifacts/candy-crackzzz
+Backend API: artifacts/api-server
+Frontend route file: artifacts/candy-crackzzz/src/App.tsx
+App state provider: artifacts/candy-crackzzz/src/context/AppContext.tsx
+Frontend API helper: artifacts/candy-crackzzz/src/lib/api.ts
+Backend Express app: artifacts/api-server/src/app.ts
+Backend route index: artifacts/api-server/src/routes/index.ts
+Candy backend routes: artifacts/api-server/src/routes/candy.ts
+Replit config: .replit
+Vite config: artifacts/candy-crackzzz/vite.config.ts
+
+Current Replit setup should run:
+API Server:
+PORT=3001 pnpm --filter @workspace/api-server run dev
+
+Frontend:
+PORT=5000 pnpm --filter @workspace/candy-crackzzz run dev
+
+The frontend Vite proxy should send /api requests to the API server on port 3001.
+
+White screen repair requirements:
+
+1. Start by checking the browser console errors, Replit console errors, Vite errors, backend API errors, and TypeScript/build errors.
+
+2. Run:
+pnpm install
+pnpm run typecheck
+pnpm run build
+
+Fix every error found.
+
+3. Verify both servers start:
+- API server must run on port 3001.
+- Frontend must run on port 5000.
+- Replit preview should open the frontend, not the backend API port.
+
+4. Verify this route works:
+GET /api/cc/bootstrap
+
+It should return app state and auth data. If it fails, fix the API route, storage, or proxy problem.
+
+5. Check AppContext.tsx. The app should never stay on a blank white screen forever. If bootstrap is loading, show a visible loading screen. If bootstrap fails, show a visible fallback screen with a friendly error and a retry button, then load sample/default data when safe.
+
+Do not leave this behavior:
+return null forever
+
+Add something like:
+- “Loading Candy CrackZZZ…”
+- “Could not reach app data. Using local defaults.”
+- Retry button
+
+6. Make apiGetBootstrap failure safe. If the backend is down or /api/cc/bootstrap fails, the frontend should still render using sampleProducts, sampleMerchItems, defaultSettings, empty orders, empty reviews, empty rewards, and empty campaigns. It should also show a small admin/developer warning instead of a white screen.
+
+7. Check AuthProvider and ProtectedRoute. A failed auth/bootstrap request should not blank the public customer site. Public pages like home, menu, merch, contact, rewards, and cart should still render.
+
+8. Check imports and routes in App.tsx. Make sure all imported page files exist and none of them crash at import time.
+
+9. Check for runtime crashes from missing settings fields. If code reads a setting that is undefined, add safe defaults in defaultSettings and defensive fallbacks in components.
+
+10. Check for broken image imports or missing files. A missing image should show a placeholder, not crash the app.
+
+11. Check that the frontend API helper in artifacts/candy-crackzzz/src/lib/api.ts points to /api/cc and does not hard-code the wrong host or port.
+
+12. Check the Vite config proxy. In development and preview, /api should proxy to 127.0.0.1:3001. Do not make frontend calls directly to localhost from the browser unless it is through the Vite proxy.
+
+13. Check deployment config. The published app must build the API server and frontend, then run both. Do not accidentally deploy only the frontend if it depends on backend state.
+
+14. Add a simple visible health/debug section only in development if helpful:
+- frontend loaded
+- bootstrap loaded
+- API reachable
+- using fallback defaults yes/no
+
+15. Remove or hide scary runtime API errors from customer-facing pages. The customer should not see red API popups for missing OpenAI, Google Maps, Twilio, or optional services.
+
+Success criteria:
+- Replit preview opens without a white screen.
+- Home page loads.
+- Menu page loads.
+- Merch page loads.
+- Admin login page loads.
+- Admin dashboard loads after login.
+- /api/cc/bootstrap works.
+- Refreshing the browser does not cause a white screen.
+- Public pages render even if optional services are missing.
+- App still works with no OPENAI_API_KEY.
+- App still works with no GOOGLE_MAPS_API_KEY.
+- App still works even if Twilio/Resend are not configured.
+- pnpm run typecheck passes.
+- pnpm run build passes.
+
+After fixing, give me a report with:
+1. What caused the white screen.
+2. Which files were changed.
+3. Whether it was frontend, backend, proxy, auth, state loading, missing import, or build related.
+4. Whether /api/cc/bootstrap works.
+5. Whether preview works.
+6. Whether published deployment should work.
+7. Anything I still need to do manually.

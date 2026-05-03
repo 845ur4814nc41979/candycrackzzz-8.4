@@ -1,0 +1,87 @@
+modules = ["nodejs-20", "web", "bash", "python-3.11"]
+
+[agent]
+expertMode = true
+stack = "BEST_EFFORT_FALLBACK"
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+API_PORT = "3001"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+author = "agent"
+mode = "parallel"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash scripts/replit-start.sh"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash scripts/replit-start.sh"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 5001
+externalPort = 3003
+
+[[ports]]
+localPort = 5002
+externalPort = 5173
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 8082
+externalPort = 4200
+
+[[ports]]
+localPort = 25876
+externalPort = 3000
+
+[[ports]]
+localPort = 25877
+externalPort = 3002
+
+[deployment]
+deploymentTarget = "autoscale"
+# API server runs on 3001. Vite preview serves the built frontend on 5000 and proxies /api to 3001.
+run = ["sh", "-c", "PORT=3001 node --enable-source-maps artifacts/api-server/dist/index.mjs & PORT=5000 API_PORT=3001 pnpm --filter @workspace/candy-crackzzz run serve"]
+# Only push DB schema when DATABASE_URL exists. The app can fall back to file storage when no database is configured.
+build = ["sh", "-c", "pnpm install --frozen-lockfile && if [ -n \"$DATABASE_URL\" ]; then pnpm --filter @workspace/db run push; else echo 'DATABASE_URL not set; skipping database push and using file storage fallback.'; fi && PORT=3001 pnpm --filter @workspace/api-server run build && PORT=5000 API_PORT=3001 pnpm --filter @workspace/candy-crackzzz run build"]

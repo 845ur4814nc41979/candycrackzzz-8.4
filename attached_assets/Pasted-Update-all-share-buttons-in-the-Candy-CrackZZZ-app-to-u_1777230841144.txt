@@ -1,0 +1,188 @@
+Update all share buttons in the Candy CrackZZZ app to use the phone’s native iOS/Android share sheet first.
+
+Goal:
+Whenever a customer or admin taps a Share button, the app should open the device’s native share menu when supported. On iPhone this should look like the built-in iOS share box with options such as AirDrop, Messages, Mail, Copy Link, Quick Note, and View More. On Android it should open the Android system share sheet.
+
+Important:
+Do not manually recreate AirDrop, Messages, Mail, contacts, or app shortcuts. Those are controlled by the phone’s operating system. The app should trigger the native share sheet using the Web Share API.
+
+Use:
+navigator.share()
+
+Apply this to all share buttons, including:
+- Referral code share buttons
+- Product share buttons, if any
+- Merch share buttons, if any
+- Menu/item share buttons, if any
+- Rewards/referral share areas
+- Any app/site share button that exists now or gets added during this pass
+
+Share data:
+Use the most specific share info available.
+
+For general app/share buttons:
+- Title: Candy CrackZZZ
+- Text: Check out Candy CrackZZZ
+- URL: current app/page URL
+
+For product share buttons:
+- Title: product name
+- Text: Check out this Candy CrackZZZ item: product name
+- URL: current product page URL
+
+For merch share buttons:
+- Title: merch item name
+- Text: Check out this Candy CrackZZZ merch: merch item name
+- URL: current merch/product page URL if available, otherwise current page URL
+
+For referral code share buttons:
+- Title: Candy CrackZZZ Referral
+- Text: Use my Candy CrackZZZ referral code [CODE] when you order and we can both earn rewards.
+- URL: rewards page or current referral URL
+
+Do not invent rewards, discounts, or point values. Only mention exact reward amounts if referrals are enabled and those values exist in settings.
+
+Native share behavior:
+1. On click/tap, check if navigator.share exists.
+2. If supported, call navigator.share({ title, text, url }).
+3. If the user cancels the native share sheet, do not show an error.
+4. If native share fails because unsupported or blocked, show the fallback modal.
+5. Do not show a custom popup before trying native share.
+6. Do not use a fake iPhone share UI.
+
+Fallback modal:
+If Web Share API is not supported on desktop or older browsers, show a simple custom fallback modal with:
+- Copy Link
+- Copy Message, if useful
+- Share by Text Message
+- Share by Email
+- Close button
+
+Fallback links:
+SMS:
+sms:?&body=ENCODED_MESSAGE_AND_URL
+
+Email:
+mailto:?subject=ENCODED_TITLE&body=ENCODED_MESSAGE_AND_URL
+
+Copy Link:
+copies the URL to clipboard and shows a toast:
+“Link copied”
+
+Copy Message:
+copies the full share message and URL and shows a toast:
+“Share message copied”
+
+Create or improve a reusable share helper:
+artifacts/candy-crackzzz/src/lib/nativeShare.ts
+
+It should export:
+- canUseNativeShare()
+- buildCurrentPageUrl()
+- shareNativeOrFallback(data)
+- buildSmsShareUrl(data)
+- buildEmailShareUrl(data)
+- copyShareLink(url)
+- copyShareMessage(data)
+
+Create or improve a reusable share component:
+artifacts/candy-crackzzz/src/components/share/NativeShareButton.tsx
+
+Props:
+- title
+- text
+- url optional, default current page URL
+- label optional, default “Share”
+- iconOnly optional
+- size optional
+- variant optional
+- className optional
+- fallbackTitle optional
+
+Use this reusable component throughout the app instead of multiple separate share implementations where possible.
+
+Update existing ReferralShareButton:
+- It should use the same native share-first behavior.
+- It should still build the referral message from the real referral code and settings.
+- It should still hide/disable itself if referrals are disabled.
+- It should fall back to copy/SMS/email only when native share is unavailable or fails because unsupported.
+- It should not show private customer info.
+
+Add product/menu/merch share buttons if missing:
+- Product detail page should have a Share button.
+- Merch item cards or merch detail areas should have a Share button if practical.
+- Menu item cards can have a small Share icon if it does not clutter the design.
+- Keep the design clean and mobile-friendly.
+
+Metadata / share preview:
+Make sure the app has proper metadata so shared links look good.
+
+In artifacts/candy-crackzzz/index.html, verify or add:
+- <title>Candy CrackZZZ</title>
+- meta description
+- Open Graph title
+- Open Graph description
+- Open Graph image
+- Open Graph type website
+- Twitter card image/summary
+- Apple touch icon
+- favicon
+- web manifest link
+
+Use the existing Candy CrackZZZ logo/icon assets if available:
+- Candy CrackZZZ logo icon
+- Apple touch icon for iPhone
+- Open Graph image for social preview
+- site.webmanifest if already present
+
+Do not expose secret or admin-only information in metadata.
+
+Testing:
+1. Test on iPhone Safari or iPhone Chrome:
+- Tap referral Share.
+- Native iOS share sheet opens.
+- It shows normal iPhone options like Messages, Mail, Copy Link, AirDrop if available.
+- Canceling does not show an error.
+
+2. Test on Android:
+- Tap Share.
+- Android system share sheet opens.
+
+3. Test on desktop:
+- If native share is supported, it opens.
+- If not supported, fallback modal opens.
+- Copy Link works.
+- SMS fallback opens a text message link.
+- Email fallback opens email with subject/body.
+- Close button works.
+
+4. Test product share:
+- Product title/text/url are correct.
+
+5. Test merch share:
+- Merch title/text/url are correct.
+
+6. Test referral share:
+- Referral code is included.
+- No private customer data is included.
+- Rewards are not invented.
+
+7. Test metadata:
+- Page title is Candy CrackZZZ.
+- Favicon/logo appears.
+- Apple touch icon exists.
+- Open Graph tags exist.
+- Shared preview uses Candy CrackZZZ title/description/image where supported.
+
+8. Run:
+pnpm --filter @workspace/candy-crackzzz run build
+pnpm --filter @workspace/api-server run build
+
+Final report:
+1. Which share buttons were updated.
+2. Where the reusable native share helper/component was added.
+3. How native iOS/Android sharing works.
+4. What fallback appears on unsupported browsers.
+5. What metadata was added or verified.
+6. Whether product, merch, and referral share were tested.
+7. Whether builds passed.

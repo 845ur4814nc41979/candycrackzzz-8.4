@@ -1,0 +1,495 @@
+Please work on only these three features right now:
+
+1. Fix merch images so they can be matched, uploaded, replaced, or removed in admin.
+2. Add simple free delivery directions for delivery orders.
+3. Add a small local helper/chatbot that only helps with candy flavors, fruit flavors, candy-dipped fruit, merch suggestions, party trays, and custom order ideas.
+
+Do not work on real-time order feed yet.
+Do not add paid OpenAI API.
+Do not add paid Google Maps API.
+Do not add WebSockets.
+Do not rebuild the whole app.
+Do not break the app that is now loading correctly.
+
+The app must continue working with:
+- no OPENAI_API_KEY
+- no GOOGLE_MAPS_API_KEY
+- no paid API billing
+
+Repo notes:
+Frontend app: artifacts/candy-crackzzz
+Backend API: artifacts/api-server
+Default merch/product data: artifacts/candy-crackzzz/src/lib/defaults.ts
+Types: artifacts/candy-crackzzz/src/types/index.ts
+App state: artifacts/candy-crackzzz/src/context/AppContext.tsx
+Admin merch page: artifacts/candy-crackzzz/src/pages/admin/AdminMerch.tsx
+Admin product form: artifacts/candy-crackzzz/src/pages/admin/AdminProductForm.tsx
+Admin settings: artifacts/candy-crackzzz/src/pages/admin/AdminSettings.tsx
+Cart/checkout: artifacts/candy-crackzzz/src/pages/CartPage.tsx
+Order success: artifacts/candy-crackzzz/src/pages/OrderSuccessRewards.tsx
+Admin orders: artifacts/candy-crackzzz/src/pages/admin/AdminOrdersReferralBadges.tsx
+Customer merch page: artifacts/candy-crackzzz/src/pages/MerchPage.tsx
+Customer menu pages: artifacts/candy-crackzzz/src/pages/MenuPage.tsx and ProductDetailPage.tsx
+Page layout: artifacts/candy-crackzzz/src/components/layout/PageLayout.tsx
+
+Before starting:
+- Confirm the app still loads.
+- Confirm home, menu, merch, cart, admin login, and admin dashboard load.
+- Do not remove the white-screen fallback/loading protections.
+- After each feature, test again before moving to the next.
+
+FEATURE 1 — MERCH IMAGES
+
+The merch shop has fake/default merch items already created, but the merch images are missing or not matched correctly. I want merch images to work like product images: click the image in admin, replace it, remove it, or choose a new image from device storage/photo library/camera where supported.
+
+Step 1: Audit product image behavior first.
+Look at AdminProductForm and any related image upload components. If product images already support click-to-replace/remove, reuse the same pattern for merch. Do not invent a separate system unless necessary.
+
+Step 2: Search for uploaded merch images.
+Search the entire project for image files in:
+- attached_assets
+- public
+- public/images
+- public/assets
+- public/uploads
+- src/assets
+- artifacts/candy-crackzzz/public
+- artifacts/candy-crackzzz/public/images
+- artifacts/candy-crackzzz/public/assets
+- artifacts/candy-crackzzz/src/assets
+- any upload folders
+- any .png, .jpg, .jpeg, .webp, .gif files
+
+Look for image names or visual matches related to:
+- tumbler
+- rhinestone
+- sparkly
+- glitter
+- diamond
+- cup
+- drinkware
+- shirt
+- tee
+- t-shirt
+- hoodie
+- hat
+- cap
+- sticker
+- apron
+- tote
+- bag
+- logo
+- mockup
+- Candy CrackZZZ
+- candycrackzzz
+- CC
+
+Existing fake/default merch items to match:
+- Candy Crackzzz Graffiti Tee
+- Drip Flame Hoodie
+- CC Drip Trucker Hat
+- Galaxy Rhinestone Tumbler
+- Candy Crackzzz Sticker Pack
+- CC Vendor Apron
+- CC Canvas Tote Bag
+
+Suggested matching:
+- Tee/shirt image → Candy Crackzzz Graffiti Tee
+- Hoodie image → Drip Flame Hoodie
+- Hat/cap image → CC Drip Trucker Hat
+- Sparkly/rhinestone/tumbler/cup image → Galaxy Rhinestone Tumbler
+- Sticker/logo pack image → Candy Crackzzz Sticker Pack
+- Apron image → CC Vendor Apron
+- Tote/bag image → CC Canvas Tote Bag
+
+If matching is uncertain, use the best reasonable match and explain it in the final report.
+Do not delete unused images.
+Do not overwrite a merch image that was already manually uploaded.
+
+Step 3: Fix default and persisted merch image values.
+If sampleMerchItems in defaults.ts has blank imageUrl values, fill them with matched asset paths.
+If persisted merch data already exists with blank imageUrl values, add a safe repair step that fills a blank imageUrl only when the merch item id/name matches a known default merch item.
+If imageUrl already has a value, preserve it.
+
+Step 4: Admin merch image replacement.
+Update AdminMerch so the image preview area is clickable.
+
+Requirements:
+- Clicking the merch image opens a file picker.
+- Accept image files only.
+- On iPhone/mobile, allow photo library/camera where the browser supports it.
+- New image previews immediately before saving.
+- Admin can Replace Image.
+- Admin can Remove Image.
+- Admin can Keep Current Image.
+- Saved image persists after refresh.
+- Saved image shows on customer-facing merch page.
+- Saved image shows in admin merch list thumbnail.
+- Customer pages do not show admin image controls.
+- If product image system stores base64, use the same for merch.
+- If product image system stores image URLs, use the same for merch.
+- Keep an advanced Image URL field if safe, but make click-to-upload the main workflow.
+- Reject non-image files with a friendly warning.
+- Add a reasonable file size limit, around 2 MB or 3 MB, unless the product image system already uses a different limit.
+- If an image is too large, tell the admin to crop/compress it.
+- Missing images should show a clean Candy CrackZZZ placeholder, not a broken image icon.
+
+If there is not already a reusable image component, create:
+artifacts/candy-crackzzz/src/components/admin/ImageUploadBox.tsx
+
+It should accept:
+- value/imageUrl
+- onChange
+- label
+- placeholder text/icon
+- remove option
+- disabled option if needed
+
+Use it for AdminMerch. If safe and quick, also use it in AdminProductForm so products and merch stay consistent, but do not break product images.
+
+Admin merch improvements:
+- Add an admin notice if active merch items are missing images:
+“Some merch items are missing images. Click an item image to upload one.”
+- Add image status label if easy:
+“Uploaded image”
+“Default asset”
+“No image”
+- Make the admin thumbnail clickable if easy; clicking it opens the edit dialog.
+
+Customer merch page:
+- Active merch items show correct images.
+- Missing images show a branded placeholder.
+- No broken image icons.
+- Layout works on iPhone.
+- Price, status, points eligibility, sizes/colors still display.
+
+FEATURE 2 — SIMPLE DELIVERY DIRECTIONS
+
+Add simple delivery directions with no Google Maps API key.
+
+Do not use:
+- GOOGLE_MAPS_API_KEY
+- Google Routes API
+- Geocoding API
+- live traffic
+- paid mileage
+- paid drive-time estimate
+
+Use a free Google Maps directions URL.
+
+Create:
+artifacts/candy-crackzzz/src/lib/directions.ts
+
+Add:
+buildGoogleMapsDirectionsUrl(originAddress: string, destinationAddress: string): string
+hasUsableAddress(address: string): boolean
+formatAddressForMaps(address: string): string
+
+Directions URL format:
+https://www.google.com/maps/dir/?api=1&origin=ENCODED_ORIGIN&destination=ENCODED_DESTINATION&travelmode=driving
+
+Use encodeURIComponent.
+Open in a new tab.
+No API key needed.
+
+Settings additions:
+Update Settings type and defaultSettings with:
+businessAddress: string
+directionsEnabled: boolean
+deliveryDirectionsButtonEnabled: boolean
+deliveryDirectionsNote: string
+
+Defaults:
+businessAddress: ''
+directionsEnabled: true
+deliveryDirectionsButtonEnabled: true
+deliveryDirectionsNote: 'Tap for directions after your delivery address is confirmed.'
+
+Admin Settings:
+Add a Delivery Directions section in AdminSettings.
+
+Fields:
+- Business / pickup address
+- Enable directions buttons
+- Customer directions note
+
+Helper text:
+“This uses a free Google Maps directions link. It does not calculate mileage, traffic, or ETA.”
+
+Checkout:
+In CartPage, when customer selects delivery and enters a delivery address:
+- If businessAddress exists
+- and delivery address exists
+- and directions are enabled
+Show:
+“Directions will be available after the order is submitted.”
+
+Optional:
+Add a “Preview Route” button if it makes sense, but do not require it.
+Do not block checkout if businessAddress is blank.
+
+Admin Orders:
+In AdminOrdersReferralBadges, when an order is delivery and has deliveryAddress:
+Show:
+- Delivery address
+- Open Directions button
+- Copy Address button if easy
+
+If businessAddress is missing, show:
+“Add your business address in Settings to enable route directions.”
+
+Button label:
+“Open Directions”
+or
+“Directions to Customer”
+
+Order Success:
+When CartPage submits an order, store the submitted order summary in sessionStorage before navigating to /order-success.
+On OrderSuccessRewards, read the last submitted order summary.
+If it was a delivery order and businessAddress exists, show:
+- Delivery address summary
+- Open Directions button
+
+Only show information from the order the customer just submitted.
+
+FEATURE 3 — SMALL LOCAL CANDY HELPER / CHATBOT
+
+Add a small helpful chatbot/helper, but it must be local and limited.
+
+Do not use OpenAI.
+Do not use Gemini.
+Do not call any paid AI API.
+Do not require any API key.
+Do not make it act like a general chatbot.
+
+This helper should only help with:
+- candy flavors
+- fruit flavors
+- candy-dipped fruit
+- candy grapes
+- pineapple
+- party trays
+- seasonal/custom trays
+- merch suggestions
+- rewards/referrals in a simple general way
+- delivery/pickup basics
+- special order ideas using available flavors/products
+
+Create:
+artifacts/candy-crackzzz/src/components/customer/LocalCandyHelper.tsx
+artifacts/candy-crackzzz/src/lib/localHelper.ts
+
+Add it to PageLayout or App.tsx so it can appear on selected pages.
+
+Settings additions:
+Update Settings type and defaultSettings with:
+
+helperEnabled: boolean
+helperShowFloating: boolean
+helperShowOnHome: boolean
+helperShowOnMenu: boolean
+helperShowOnMerch: boolean
+helperShowOnCart: boolean
+helperAllowMerchSuggestions: boolean
+helperAllowRewardsSuggestions: boolean
+helperAllowReferralSuggestions: boolean
+helperAllowCustomOrderIdeas: boolean
+helperGreeting: string
+helperMaxRecommendations: number
+helperAllergyDisclaimer: string
+helperFallbackMessage: string
+
+Defaults:
+helperEnabled: true
+helperShowFloating: true
+helperShowOnHome: true
+helperShowOnMenu: true
+helperShowOnMerch: true
+helperShowOnCart: true
+helperAllowMerchSuggestions: true
+helperAllowRewardsSuggestions: true
+helperAllowReferralSuggestions: true
+helperAllowCustomOrderIdeas: true
+helperGreeting: 'Need help picking something sweet? Tell me what flavors you like.'
+helperMaxRecommendations: 3
+helperAllergyDisclaimer: 'Please confirm ingredients and allergy concerns before ordering.'
+helperFallbackMessage: 'I can help with candy flavors, fruit flavors, trays, merch, rewards, pickup, delivery, and custom order ideas.'
+
+Admin controls:
+Add a Local Helper / Candy Helper section in AdminSettings.
+
+Controls:
+- Enabled/disabled
+- Floating button enabled/disabled
+- Show on home
+- Show on menu
+- Show on merch
+- Show on cart
+- Allow merch suggestions
+- Allow rewards suggestions
+- Allow referral suggestions
+- Allow special/custom order ideas
+- Greeting message
+- Max recommendations
+- Allergy disclaimer text
+- Fallback message
+
+Customer helper behavior:
+The helper should feel like a small guided chat.
+
+It should ask:
+“What flavors do you like?”
+“Do you like sweet, sour, spicy, fruity, chocolate, or tropical?”
+“Are you shopping for yourself, a gift, a party, or merch?”
+“Do you want candy-dipped fruit, a tray, merch, or a custom order?”
+“Any allergies or ingredients to avoid?”
+
+It should understand keywords:
+sweet
+sour
+spicy
+fruity
+tropical
+blue raspberry
+strawberry
+cherry
+mango
+habanero
+pineapple
+grapes
+candy grapes
+party
+birthday
+holiday
+custom
+tray
+gift
+merch
+shirt
+hoodie
+hat
+tumbler
+sparkly
+sticker
+apron
+tote
+points
+rewards
+referral
+delivery
+pickup
+
+Recommendation rules:
+- Only recommend real items from the app’s products and merch arrays.
+- Product must be isVisible true.
+- Product must not be sold out.
+- Product should be available.
+- Merch must be isActive true.
+- Merch status must not be out-of-stock unless user asks about coming soon/out of stock.
+- Prioritize featured items.
+- Prioritize flavor/category/tag matches.
+- Do not invent products.
+- Do not invent prices.
+- Do not invent rewards.
+- Do not invent point balances.
+- Do not invent delivery times.
+- Do not recommend sold-out items as available.
+- Show item image, name, short description, price if public, and action button.
+- Use existing addToCart if safe and easy.
+- Otherwise link to menu or merch page.
+
+Food disclaimer:
+When recommending food, show the helperAllergyDisclaimer.
+
+Rewards/referrals:
+The helper can explain general rewards based on settings.
+It can say:
+“Rewards are enabled.”
+“You can earn points on completed orders if rewards are turned on.”
+“Referral rewards are available if referrals are enabled.”
+
+Security rule:
+Do not show a customer’s point balance just because they type a phone number.
+Do not show order history.
+Do not claim the customer is logged in unless the app has a real verified customer login system.
+Keep rewards guidance general unless proper verification already exists.
+
+Special orders:
+If the user asks for a custom/special order, suggest existing flavors/products as inspiration and say:
+“Custom orders require approval and confirmation.”
+
+Scope control:
+If the user asks unrelated questions, respond with:
+“I can help with Candy CrackZZZ flavors, fruit, candy-dipped treats, merch, rewards, pickup, delivery, or custom order ideas.”
+
+Testing:
+After all changes, test:
+
+Basic:
+- Home loads.
+- Menu loads.
+- Merch loads.
+- Cart loads.
+- Admin login loads.
+- Admin dashboard loads.
+- No white screen on refresh.
+
+Merch images:
+1. Uploaded/existing merch images are found or clearly reported missing.
+2. Default merch items are matched to images where possible.
+3. Admin can click merch image and replace it.
+4. Admin can remove merch image.
+5. New image previews before save.
+6. Save persists after refresh.
+7. Customer merch page shows saved image.
+8. Admin merch list shows saved thumbnail.
+9. Product image replacement still works.
+10. No broken image icons.
+
+Directions:
+1. Add business address in Admin Settings.
+2. Submit a delivery order.
+3. Open Admin Orders.
+4. Expand delivery order.
+5. Open Directions button appears.
+6. Button opens Google Maps route from business address to customer delivery address.
+7. No Google API key required.
+8. If business address is blank, app shows a clear warning and does not crash.
+
+Local candy helper:
+1. Helper appears only where settings allow.
+2. Customer types “I like sour blue raspberry.”
+3. Helper recommends real matching products only.
+4. Customer types “I need a party tray.”
+5. Helper recommends real party trays.
+6. Customer types “sparkly tumbler.”
+7. Helper recommends real merch if enabled.
+8. Helper does not recommend sold-out items as available.
+9. Helper does not invent products, prices, rewards, point balances, or delivery times.
+10. Helper includes allergy disclaimer for food.
+11. Helper refuses/redirects unrelated questions back to Candy CrackZZZ topics.
+
+Build:
+Run:
+pnpm run typecheck
+pnpm run build
+
+Fix all errors.
+
+Final report:
+At the end, give me a report with:
+
+1. What changed.
+2. Which files changed.
+3. Which merch images were found.
+4. Which image was matched to each merch item.
+5. Which merch items still need manual image uploads.
+6. Where I click to replace/remove merch images.
+7. How images are stored.
+8. Whether product image behavior was reused.
+9. How free directions work.
+10. Where business address is set.
+11. How the local candy helper works.
+12. What admin settings were added.
+13. What still needs manual setup from me.
+14. Confirmation that no OpenAI API or Google Maps API is required.

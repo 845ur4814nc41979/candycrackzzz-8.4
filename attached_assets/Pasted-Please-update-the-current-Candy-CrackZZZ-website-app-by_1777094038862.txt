@@ -1,0 +1,102 @@
+Please update the current Candy CrackZZZ website/app by adding a full Merch page and matching admin controls. Do not remove or break the existing menu, checkout, admin login, rewards, payment settings, messaging, notifications, or any current working features.
+
+Add a public/customer-facing Merch page to the main navigation. This page should show Candy CrackZZZ branded merchandise similar to the uploaded mockups, including but not limited to T-shirts, hoodies, hats, tumblers, sticker packs, aprons, tote bags, pins/buttons, pouches, vendor accessories, and future merch items. The merch page should match the existing Candy CrackZZZ style: black background or black product cards, bright blue/pink/purple accents, candy-drip/graffiti feel, and clean mobile-friendly layout.
+
+I will upload the real merch photos later, so build the system to support admin-uploaded merch photos. If image upload already exists in the app, reuse it. If not, add a simple image upload system for merch items. If uploads are not possible in the current environment, add an image URL field and placeholder image fallback so the feature still works.
+
+Customer-facing merch requirements:
+Create a merch grid with product cards.
+Each card should show product photo, product name, short description, price, reward points info if applicable, status badge, and purchase button.
+Support product statuses:
+Available
+Coming Soon
+Out of Stock
+Limited Quantity
+If Coming Soon, the item should be visible but not purchasable.
+If Out of Stock, the item should be visible but not purchasable.
+If Limited Quantity, show a limited quantity badge and show remaining quantity if enabled.
+If inventory reaches zero, automatically treat the item as Out of Stock.
+Add size/color/variant support where useful, especially for shirts and hoodies. Sizes should be editable by admin, such as S, M, L, XL, 2XL, 3XL.
+Make sure the customer can add merch to cart separately or together with candy items if the current cart system supports it.
+Clearly label merch as merchandise so it is separate from food/menu items.
+
+Rewards/points requirements:
+Add admin controls for whether each individual merch item can use points.
+Each merch item needs toggles/options:
+Allow points toward purchase: yes/no
+Allow full purchase with points: yes/no
+Points required for full redemption
+Maximum points allowed toward this item
+Minimum points required to redeem
+Optional cash plus points purchase
+If points cannot be used on an item, the customer should see “Points not available for this item” or no points message.
+If points can be used, show a clear message like “Use rewards points toward this item” or “Redeem for ___ points.”
+Do not let customers redeem more points than they have.
+Do not let points redemption create a negative balance.
+If the checkout/rewards system is not fully connected yet, build the UI and data structure now and mark the final deduction logic clearly in the code so it can be connected when rewards are finalized.
+
+Admin merch controls:
+Add a new Admin section called “Merch.”
+Admin should be able to create, edit, delete, hide/show, and reorder merch items.
+Each merch item should include:
+Product name
+Description
+Category
+Price
+Sale price optional
+Image upload or image URL
+Status: Available, Coming Soon, Out of Stock, Limited Quantity
+Inventory quantity
+Show quantity toggle
+Featured item toggle
+Active/hidden toggle
+Allow points toggle
+Allow full points purchase toggle
+Points required
+Max points allowed toward purchase
+Sizes/variants
+Colors/variants
+Pickup/shipping note
+Sort order
+Admin should be able to update statuses without editing code.
+Admin should be able to mark an item Coming Soon even if there is no price yet.
+Admin should be able to mark an item Limited Quantity and set the available quantity.
+Admin should be able to turn points redemption on or off per item.
+
+Design requirements:
+The merch page should look polished and ready for customers.
+Use Candy CrackZZZ colors: bright cyan/blue, hot pink, purple, black, white highlights.
+Use badges for Coming Soon, Out of Stock, Limited Quantity, Points Eligible, and Redeemable.
+Make it mobile-friendly first.
+Add a nice page title like “Candy CrackZZZ Merch.”
+Add a short tagline like “Rep the drip. Sweet gear, bold flavor.”
+Do not use fake third-party brand names.
+Do not use copyrighted merch examples.
+Use clean placeholder cards only until I upload the final photos.
+
+Technical requirements:
+Use the app’s existing database/storage pattern if one already exists.
+If this app currently uses local JSON or local state, add merch data in the same style for now.
+If there is a database, add a proper merch/products table or collection.
+Make sure merch items persist after refresh and after deployment.
+Add seed/sample merch items only for testing, but make them easy to replace from admin.
+Do not hard-code final merch products into the UI only; the admin must control them.
+Do not break the current deployment.
+After implementation, test:
+Customer can open Merch page.
+Admin can add/edit merch.
+Admin can upload or set product image.
+Admin can set Coming Soon, Out of Stock, Limited Quantity, and Available.
+Admin can turn points eligibility on/off per item.
+Customer sees correct status badges.
+Unavailable items cannot be purchased.
+Points controls display correctly.
+Cart/checkout does not break.
+App still builds and runs.
+
+When finished, give me:
+1. A short summary of what was added.
+2. What files were changed.
+3. How to add my merch photos.
+4. How to turn points on/off for a merch item.
+5. Anything still needed for full rewards checkout integration.

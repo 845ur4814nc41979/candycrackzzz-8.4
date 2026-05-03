@@ -1,0 +1,80 @@
+The install and database are working now.
+
+The shell test shows:
+- http://127.0.0.1:3001/api/cc/bootstrap returns HTTP/1.1 200 OK with JSON.
+- http://127.0.0.1:5000/ returns HTTP/1.1 200 OK with HTML.
+
+So the white screen is not from missing node_modules, missing database tables, or the API being completely down.
+
+Please diagnose the frontend runtime crash now.
+
+Do not add new features. Only fix the white screen.
+
+Steps:
+
+1. Open the Replit browser preview on port 5000.
+2. Inspect the browser console.
+3. Find the exact red runtime error.
+4. Fix the exact file/component causing the crash.
+
+Likely areas to check:
+- HomePage.tsx, especially the new Order Helper button
+- Local helper/chatbot component listening for cc-open-helper
+- PageViewTracker
+- analytics.ts
+- AppContext settings merge
+- defaultSettings missing new fields
+- NotificationBell or notification settings
+- any component reading undefined settings fields
+- any bad import or missing component
+- any image/logo import from @assets
+- any route import in App.tsx
+
+Important:
+The app should never show a blank white screen. Add a frontend ErrorBoundary around the main app/router so runtime crashes show a visible error box instead of a blank screen.
+
+Create or improve:
+artifacts/candy-crackzzz/src/components/layout/AppErrorBoundary.tsx
+
+It should show:
+“Candy CrackZZZ hit a loading error.”
+“Try refresh, or check the browser console.”
+A Retry/Reload button.
+In development, show the error message and stack.
+In production, show a friendly message.
+
+Wrap the app contents in App.tsx with the ErrorBoundary.
+
+Also add defensive checks:
+- PageViewTracker should fail silently if analytics errors.
+- Local helper should fail silently if settings/helper fields are missing.
+- HomePage openOrderHelper should check typeof window !== 'undefined' before dispatching event.
+- If settings.helperEnabled is undefined, treat it as true or use defaultSettings fallback.
+- AppContext should always merge backend settings with frontend defaultSettings.
+- Any new settings fields must exist in frontend defaultSettings and backend defaultSettings.
+
+Run:
+pnpm run typecheck
+pnpm run build
+
+Also run:
+curl -i http://127.0.0.1:5000/api/cc/bootstrap | head -40
+
+Success criteria:
+1. Home page renders in preview.
+2. No white screen.
+3. Browser console has no red runtime crash.
+4. /menu works.
+5. /merch works.
+6. /admin/login works.
+7. /api/cc/bootstrap works through the frontend proxy.
+8. Refresh does not white screen.
+9. Typecheck passes.
+10. Build passes.
+
+Report back:
+- exact browser console error
+- file/component that crashed
+- what was fixed
+- whether ErrorBoundary was added
+- whether typecheck/build passed

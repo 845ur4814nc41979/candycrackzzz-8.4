@@ -1,0 +1,63 @@
+Clean up the homepage hero buttons.
+
+Current issue:
+On the main/home screen there are two buttons:
+- Overview
+- Browse Menu
+
+They are redundant because they both basically send the customer toward the same place.
+
+Change the homepage hero buttons to:
+
+Button 1:
+Text: “Overview / Browse Menu”
+Purpose: Main shopping/menu path.
+Link it to the same place the best current Browse Menu button goes, probably /menu.
+
+Button 2:
+Text: “Order Helper”
+or
+“Candy Helper”
+Purpose: Open the local AI-style helper/chatbot.
+This should not use OpenAI or any paid API.
+It should open the existing local helper if it exists.
+If the helper is not fully built yet, make the button scroll to or open a simple local helper panel that asks what flavors/products the customer likes.
+
+Requirements:
+1. Remove the separate redundant “Overview” and “Browse Menu” button pair.
+2. Replace them with two clear buttons:
+   - Overview / Browse Menu
+   - Order Helper
+3. Keep the button styling consistent with the current Candy CrackZZZ design.
+4. On mobile, buttons should stack cleanly.
+5. “Overview / Browse Menu” should go to /menu.
+6. “Order Helper” should open the local helper/chatbot panel or scroll to it.
+7. Do not call OpenAI.
+8. Do not require OPENAI_API_KEY.
+9. Do not break homepage, menu, cart, merch, rewards, or admin.
+
+If the current helper is floating and controlled by settings:
+- The Order Helper button should trigger/open the floating helper.
+- If helper is disabled in settings, either hide the button or show a friendly message:
+“Order Helper is currently turned off.”
+
+If there is no open-helper event yet:
+- Add a simple custom browser event like window.dispatchEvent(new CustomEvent('cc-open-helper'))
+- Make the helper component listen for that event and open itself.
+
+Testing:
+1. Home page loads.
+2. Only two hero buttons show.
+3. Overview / Browse Menu opens /menu.
+4. Order Helper opens the helper panel.
+5. Mobile layout looks good.
+6. No OpenAI/API errors appear.
+7. pnpm run typecheck passes.
+8. pnpm run build passes.
+
+Report back:
+- what file was changed
+- what the two buttons now say
+- where each button goes
+- whether the helper opens correctly
+- whether build/typecheck passed

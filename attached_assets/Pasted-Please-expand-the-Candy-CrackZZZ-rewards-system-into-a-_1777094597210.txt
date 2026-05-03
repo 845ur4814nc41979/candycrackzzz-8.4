@@ -1,0 +1,278 @@
+Please expand the Candy CrackZZZ rewards system into a full Rewards Campaign System.
+
+Do not remove or break the existing menu, checkout, admin, merch, payment settings, AI description tools, customer records, or order system. This should build on top of the current rewards/points concept.
+
+The goal is to support more than just earning/spending points. I want admin controls for birthday rewards, holiday rewards, loyalty rewards, surprise rewards, customer groups, promo drops, and different ways to send rewards to customers.
+
+Add a new Admin section called “Rewards Campaigns.”
+
+Rewards Campaign types should include:
+
+1. Birthday Rewards
+Allow customers to optionally enter their birthday month/day in their customer profile or checkout.
+Admin should be able to create a birthday reward campaign, such as:
+Free item
+Dollar off
+Percentage off
+Bonus points
+Free merch item
+Points multiplier
+Cash plus points offer
+Admin should control how many days before or after the birthday the reward is valid.
+Example: Send customer a birthday reward 7 days before their birthday and make it valid for 14 days.
+Do not require the birth year unless absolutely needed. Month/day is enough.
+Include a privacy-friendly note that birthday info is optional and used only for rewards.
+
+2. Holiday Rewards
+Add holiday reward campaigns controlled by admin.
+Admin should be able to select common holidays or create custom holidays/events.
+Include common options such as:
+Valentine’s Day
+Easter
+Mother’s Day
+Father’s Day
+Fourth of July
+Halloween
+Thanksgiving
+Black Friday
+Small Business Saturday
+Christmas
+New Year’s
+Custom Event
+Admin should be able to create holiday offers such as:
+Holiday coupon code
+Bonus points
+Limited-time reward
+Free topping/add-on
+Merch discount
+Holiday tray discount
+Holiday bundle offer
+Holiday pre-order special
+Admin should control start date, end date, and whether the offer appears on the homepage, checkout, customer account, email, SMS, or push notification.
+
+3. Manual Reward Send
+Admin should be able to manually send a reward to one customer or a group of customers.
+Admin should be able to choose:
+Customer
+Customer group
+Reward type
+Expiration date
+Message text
+Send method
+Admin should be able to send rewards as:
+In-app/customer account reward
+Email
+SMS/text message
+Push notification if available
+Printable code/QR code
+If email/SMS/push integrations are not fully connected yet, build the campaign UI and message queue now, and show “Not connected yet” until the needed secrets are added.
+
+4. Customer Groups and Segments
+Add simple customer groups/tags so rewards can be sent to targeted groups.
+Examples:
+New Customer
+VIP
+Birthday Club
+Holiday List
+Merch Buyer
+Repeat Customer
+Inactive Customer
+High Spender
+Local Pickup Customer
+Manual tag
+Admin should be able to add/remove customer tags.
+Campaigns should be able to target all customers or only selected groups.
+
+5. Loyalty Milestone Rewards
+Add automated reward triggers based on customer activity.
+Examples:
+First order reward
+After 3 orders
+After 5 orders
+After 10 orders
+Spend $50
+Spend $100
+Spend $250
+Refer a friend
+Buy merch
+Buy holiday tray
+Admin should be able to turn each milestone on/off and decide the reward.
+
+6. Win-Back Rewards
+Add a campaign type for inactive customers.
+Admin should be able to set rules like:
+If customer has not ordered in 30 days, send reward.
+If customer has not ordered in 60 days, send bigger reward.
+If customer has not ordered in 90 days, send final win-back reward.
+Admin should control the message, reward amount, and expiration date.
+
+7. Points Multipliers
+Add campaign support for temporary points multipliers.
+Examples:
+Double Points Weekend
+Triple Points on Merch
+Birthday Month Double Points
+Holiday Bonus Points
+Admin should choose:
+Start date
+End date
+Eligible products
+Candy only
+Merch only
+Everything
+Specific products only
+
+8. Reward Types
+Support these reward types:
+Dollar off
+Percentage off
+Free item
+Free topping/add-on
+Free merch item
+Bonus points
+Points multiplier
+Free delivery if delivery is added later
+Cash plus points offer
+Buy X get Y
+Limited-time coupon code
+
+9. Reward Rules
+Each reward/campaign should have admin controls for:
+Active/inactive
+Start date
+End date
+Expiration date
+Usage limit
+One use per customer toggle
+Minimum order amount
+Candy only
+Merch only
+Specific products only
+Pickup only
+Cannot combine with other offers toggle
+Points required if applicable
+Auto-send toggle
+Manual send button
+Show on homepage toggle
+Show at checkout toggle
+Show in customer account toggle
+
+10. Customer-Facing Reward Wallet
+Add or improve a customer reward wallet/account area where customers can see:
+Current points balance
+Available rewards
+Birthday reward if available
+Holiday rewards if available
+Expiring soon rewards
+Reward history
+Used rewards
+Expired rewards
+Coupon/reward code if needed
+
+11. Reward Notifications
+Prepare the system to send rewards through different channels:
+In-app reward wallet
+Email
+SMS/text
+Push notification
+QR code/coupon code
+Admin should be able to choose the send method per campaign.
+If email, SMS, or push services are not connected yet, do not break the app. Show clear setup messages and keep the reward saved in the customer account.
+
+Use Replit Secrets for any keys. Do not hard-code private keys in frontend code.
+Potential future secrets may include:
+OPENAI_API_KEY
+TWILIO_ACCOUNT_SID
+TWILIO_AUTH_TOKEN
+TWILIO_PHONE_NUMBER
+SENDGRID_API_KEY or email provider key
+PUSH_NOTIFICATION_KEY if push is added later
+
+12. Message Templates
+Add editable message templates for reward campaigns.
+Examples:
+Birthday reward message
+Holiday reward message
+Win-back message
+VIP reward message
+Merch drop message
+Points earned message
+Points expiring message
+Order milestone message
+
+Admin should be able to edit the wording before sending.
+Keep messages short, fun, and professional. Match the Candy CrackZZZ brand without sounding too cheesy.
+
+13. Opt-In and Unsubscribe
+Add customer opt-in controls for email and SMS marketing.
+Do not send marketing messages to customers who have not opted in.
+Add fields for:
+Email marketing opt-in
+SMS marketing opt-in
+Push notification opt-in if added later
+Add an unsubscribe/stop note for SMS and email messages if those integrations are used.
+
+14. Rewards Audit Log
+Track reward activity:
+Reward created
+Reward sent
+Reward used
+Reward expired
+Points added
+Points deducted
+Campaign edited
+Manual reward issued
+Birthday reward generated
+Holiday reward generated
+
+15. Admin Testing Tools
+Add a test mode for rewards campaigns so admin can preview:
+Who will receive the reward
+What message will be sent
+What the customer will see
+Whether the reward applies at checkout
+Admin should be able to send a test reward to themselves before sending to customers.
+
+16. AI Reward Copy
+If the AI tools are already being added, also allow admin to generate reward message copy with AI.
+Input should include:
+Campaign type
+Holiday/event
+Reward amount
+Product/category
+Tone
+The AI should suggest a short message and optional campaign name.
+Admin must approve/edit before saving.
+
+Example campaign names:
+Birthday Crack Drop
+Sweet Surprise Reward
+Holiday Drip Deal
+Double Points Weekend
+VIP Candy Drop
+Merch Drop Reward
+Comeback Crunch Coupon
+Sweet Tooth Bonus
+
+Test everything:
+Admin can create a birthday reward campaign.
+Admin can create a holiday reward campaign.
+Admin can manually send a reward.
+Rewards show in customer wallet.
+Reward expiration works.
+Unavailable/expired rewards cannot be used.
+Points cannot go negative.
+Checkout applies eligible rewards correctly.
+Non-eligible merch/candy does not accept the wrong reward.
+App does not break if email/SMS/push secrets are missing.
+Admin can preview/test a campaign before sending.
+Mobile layout works.
+
+When finished, give me:
+1. Summary of what was added.
+2. Files changed.
+3. New secrets needed.
+4. How to create a birthday reward.
+5. How to create a holiday reward.
+6. How to manually send a reward.
+7. What still needs to be connected for live SMS, email, or push notifications.

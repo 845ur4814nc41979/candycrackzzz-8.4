@@ -1,0 +1,58 @@
+Also add AI-assisted product writing tools for both candy menu items and merch items.
+
+For both candy products and merch products, add an admin button called “Generate with AI” or “AI Suggest.” This should help create a polished product description and optional new product name suggestion.
+
+The AI should use:
+Product title/name
+Product category
+Flavors, toppings, colors, or ingredients if provided
+Uploaded product image, if available
+Current description, if one already exists
+Whether the item is candy/fruit or merch
+
+For candy items, the AI should write a short catchy description that sounds fun, appetizing, and professional without being too cheesy or over-the-top. It should mention the flavor, crunch, candy shell, fruit type, or visual look when relevant.
+
+For merch items, the AI should write a short brand-style description that matches Candy CrackZZZ: bold, colorful, streetwear, candy-drip, fun vendor/customer merch, but still clean and professional.
+
+Add an AI-generated product name suggestion feature:
+Admin should see a suggested new product name after AI generation.
+Add a toggle or button that says “Use Suggested Name.”
+Do not automatically replace the product name unless the admin chooses to apply it.
+Admin should also be able to regenerate suggestions.
+Admin should be able to edit the AI result before saving.
+Add separate buttons if needed:
+Generate Description
+Suggest Product Name
+Use Suggested Name
+Regenerate
+
+The AI writing should not sound corny, childish, or too long. Keep descriptions short enough for a menu/product card, usually 1 to 3 sentences.
+
+If the app already has OpenAI API routes, reuse them.
+If not, create a secure backend route for AI generation and require the OpenAI API key to be stored in Replit Secrets, not in frontend code.
+Use a secret named OPENAI_API_KEY.
+If the API key is missing, show a friendly admin message saying AI generation is not set up yet instead of breaking the app.
+
+AI generation requirements:
+Do not make health claims.
+Do not claim ingredients that were not provided.
+Do not invent allergens or dietary claims.
+Do not say “best,” “guaranteed,” or anything that sounds legally risky.
+If an image is available, use image understanding only to describe visible style, colors, fruit type, packaging, or merch appearance, but do not guess ingredients unless listed.
+For candy, avoid implying THC, alcohol, drugs, or anything not part of the product.
+For merch, keep it brand-focused and retail-friendly.
+
+Add this feature to:
+Admin candy/menu item editor
+Admin merch item editor
+New candy product form
+New merch product form
+
+Please test:
+AI description generation works for candy.
+AI description generation works for merch.
+AI suggested name appears separately.
+Use Suggested Name toggle/button works.
+Admin can edit the AI text before saving.
+Nothing breaks if the API key is missing.
+Existing products still work.

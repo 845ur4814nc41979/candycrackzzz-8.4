@@ -1,0 +1,143 @@
+Inspect this entire imported Candy Crackzzz repo end to end and make it load in Replit Preview right now. Do not stop at diagnosis. Actually fix the code and config so the app runs.
+
+This repo is a workspace with a frontend at artifacts/candy-crackzzz and a backend at artifacts/api-server. The app currently white-screens or fails to preview. I need a working Replit preview on port 3000, with the frontend loading, the backend responding, and the admin login working immediately.
+
+High priority goal:
+Get the app to run in Replit Preview now, not just compile in theory.
+
+Important constraints:
+Do not do a redesign.
+Do not replace the app with a simplified mock.
+Do not remove current features like rewards, referrals, messages, notifications, admin dashboard, admin orders, order success, or the customer rewards page unless a file is truly broken and must be consolidated.
+Keep changes targeted to runtime, preview, proxy, startup, auth bootstrap, and any actual compile/runtime errors you find.
+
+Known symptoms to investigate:
+The app still will not load.
+There has been a white screen.
+A runtime error has appeared before: Cannot access 'finalTotal' before initialization.
+A shell/runtime error has also appeared before: vite: not found / node_modules missing.
+The frontend currently calls /api/cc/*.
+The real backend routes live in the separate api-server app.
+The likely root problem is that the frontend and backend are not wired together correctly for Replit preview.
+
+Inspect these files first:
+package.json at repo root
+.gitignore
+.replit
+artifacts/candy-crackzzz/package.json
+artifacts/candy-crackzzz/vite.config.ts
+artifacts/candy-crackzzz/src/App.tsx
+artifacts/candy-crackzzz/src/lib/api.ts
+artifacts/candy-crackzzz/src/context/AuthContext.tsx
+artifacts/candy-crackzzz/src/context/AuthContextBootstrap.tsx
+artifacts/candy-crackzzz/src/context/AppContext.tsx
+artifacts/candy-crackzzz/src/pages/CartPage.tsx
+artifacts/api-server/package.json
+artifacts/api-server/src/app.ts
+artifacts/api-server/src/index.ts
+artifacts/api-server/src/routes/candy.ts
+artifacts/api-server/src/routes/candy-storage.ts
+
+What I need you to confirm and fix:
+The frontend in artifacts/candy-crackzzz calls /api/cc/*.
+The backend in artifacts/api-server exposes those routes under /api.
+The frontend Vite config must proxy /api to the api-server during dev and preview.
+The api-server must default to port 3001 if PORT is not set.
+The frontend must default to port 3000.
+Replit must know how to start both processes together.
+The repo must have a tracked .replit file and .gitignore must not ignore .replit.
+The app must install dependencies and not fail because node_modules are missing.
+Any actual runtime bug such as finalTotal being referenced before initialization must be fixed.
+Any stale route/page wiring must be fixed if imports do not compile.
+The admin bootstrap/auth flow must work enough for preview.
+
+Make these changes if they are not already present:
+
+1. Frontend Vite proxy
+In artifacts/candy-crackzzz/vite.config.ts:
+Keep PORT default at 3000.
+Add API_PORT default at 3001.
+Add server.proxy so "/api" forwards to http://127.0.0.1:3001.
+Add preview.proxy so "/api" forwards to http://127.0.0.1:3001.
+Do not remove existing useful plugins unless they are the cause of failure.
+
+2. Backend default port
+In artifacts/api-server/src/index.ts:
+Do not throw just because PORT is missing.
+Default PORT to 3001.
+Keep numeric validation.
+
+3. Replit startup script
+Create scripts/start-candy-preview.sh that:
+runs pnpm install if needed
+starts api-server on port 3001
+starts the frontend on port 3000
+exports BASE_PATH=/
+exports CANDY_FORCE_FILE_STORAGE=1 for preview safety if needed
+keeps both processes alive for Replit Preview
+
+4. Restore or create .replit
+Create a tracked .replit file that:
+runs bash scripts/start-candy-preview.sh
+uses nodejs-20
+exposes port 3000
+includes an autoscale deployment section
+has a build command that builds api-server and candy-crackzzz
+has a run command for deployment that starts the api-server and then serves the frontend
+
+5. Update .gitignore
+If .replit is ignored, remove that ignore line.
+Keep other ignores unless clearly harmful.
+
+6. Fix any actual runtime bug you find
+If CartPage or any other page has a real use-before-initialization or similar runtime issue, fix it.
+If App.tsx is importing stale or broken page variants, repair the imports.
+If duplicate page variants are causing confusion, consolidate only if necessary.
+
+7. Admin login must work
+There must be a preset owner/admin login that works immediately in preview.
+Expected temporary credentials:
+username: owner
+password: CandyCrackzzzTemp1!
+If the current storage/bootstrap logic already seeds this account, make sure it actually works in preview.
+Do not leave the app stuck on a broken first-run setup flow.
+
+8. Backend/bootstrap verification
+Make sure /api/cc/bootstrap actually returns JSON through the frontend proxy in preview.
+The white screen should not remain because auth/bootstrap fails silently.
+
+9. Verify these routes after your fixes:
+/
+ /menu
+ /cart
+ /rewards
+ /order-success
+ /admin/login
+ /admin
+ /admin/orders
+
+10. Verify these features still basically work:
+frontend renders
+rewards page renders
+admin login renders
+dashboard renders
+orders page renders
+messages/notifications routes do not break startup
+checkout page renders
+order submission path does not crash the app
+
+11. Run and verify
+Actually run the project in Replit after making fixes.
+Do not just say what should happen.
+Tell me what command Replit is using to start it.
+Tell me whether Preview works now.
+
+When you are done, give me a short report with:
+root cause or causes
+files changed
+what you fixed
+whether preview works now
+whether publish is likely to work now
+exact temporary admin login credentials
+
+Again: do not stop at diagnosis. Make the app run in Replit Preview now.

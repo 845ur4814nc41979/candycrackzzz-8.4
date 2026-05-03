@@ -1,0 +1,136 @@
+Stop adding new features and stop doing broad cleanup.
+
+The last pass did not meet the requirements. I cannot see the changes working in the app.
+
+Current problems:
+1. Merch pictures are NOT interchangeable. I cannot click them and replace/remove them like product images.
+2. The delivery directions feature is not clearly showing where it is supposed to show.
+3. The local chatbot/helper is not visible anywhere on my screen.
+4. I need proof of what was actually changed, not just a report.
+5. Do not use more time/credits on unrelated work.
+
+First, show me the actual changed files:
+Run git status and git diff summary.
+Tell me exactly which files were changed.
+If no meaningful files were changed for merch image replacement, directions, or chatbot, say that honestly and then implement only those missing items.
+
+Do not work on anything else until these three things are visibly working:
+
+A. MERCH IMAGE REPLACE / REMOVE MUST WORK
+
+The merch images must work like the product image replacement system.
+
+Acceptance test:
+- Go to /admin/merch.
+- Open/edit a merch item.
+- I must see the merch image preview area.
+- Clicking the image area must open a file picker.
+- I must be able to choose an image from my device/photo library/camera where supported.
+- The image must preview immediately.
+- There must be a Replace Image option.
+- There must be a Remove Image option.
+- After clicking Save, the image must persist after refresh.
+- The image must show on the public /merch page.
+- The image must show in the admin merch list thumbnail.
+
+If this is not implemented, implement it now.
+
+Check these files:
+- artifacts/candy-crackzzz/src/pages/admin/AdminMerch.tsx
+- artifacts/candy-crackzzz/src/pages/admin/AdminProductForm.tsx
+- artifacts/candy-crackzzz/src/components/admin/ImageUploadBox.tsx, if it exists
+- artifacts/candy-crackzzz/src/context/AppContext.tsx
+- artifacts/candy-crackzzz/src/lib/defaults.ts
+
+If the product image upload already works, reuse the same component/pattern for merch. Do not make merch only use an Image URL text field. The image itself must be clickable.
+
+Also add a visible message in Admin Merch if images are missing:
+“Some merch items are missing images. Click a merch image to upload or replace it.”
+
+B. SIMPLE DELIVERY DIRECTIONS MUST BE VISIBLE
+
+No Google API. No paid maps API.
+
+Add a simple Google Maps URL directions button.
+
+Acceptance test:
+- Admin Settings must have a Business / Pickup Address field.
+- I can enter the business address and save it.
+- When a customer places a delivery order with a delivery address, the admin order view must show an Open Directions button.
+- The button must open Google Maps directions from the business address to the customer delivery address.
+- If the business address is missing, show a clear warning in the admin order view:
+“Add your business address in Settings to enable route directions.”
+- Do not hide this feature where I cannot find it.
+
+Check these files:
+- artifacts/candy-crackzzz/src/lib/directions.ts
+- artifacts/candy-crackzzz/src/types/index.ts
+- artifacts/candy-crackzzz/src/lib/defaults.ts
+- artifacts/candy-crackzzz/src/pages/admin/AdminSettings.tsx
+- artifacts/candy-crackzzz/src/pages/admin/AdminOrdersReferralBadges.tsx
+- artifacts/candy-crackzzz/src/pages/CartPage.tsx
+- artifacts/candy-crackzzz/src/pages/OrderSuccessRewards.tsx
+
+The button should use this format:
+https://www.google.com/maps/dir/?api=1&origin=ENCODED_BUSINESS_ADDRESS&destination=ENCODED_CUSTOMER_ADDRESS&travelmode=driving
+
+C. LOCAL CHATBOT / CANDY HELPER MUST BE VISIBLE
+
+The helper must be local only. No OpenAI. No paid API.
+
+Acceptance test:
+- I should see a small floating helper button on the customer-facing site.
+- It should appear at least on:
+  - home page
+  - menu page
+  - merch page
+  - cart page
+- It should be ON by default.
+- Admin Settings should have a section to turn it on/off.
+- The helper should only talk about Candy CrackZZZ topics: candy flavors, fruit flavors, candy-dipped fruit, party trays, merch, rewards/referrals in general, pickup/delivery basics, and custom order ideas.
+- If I type “I like sour blue raspberry,” it should recommend real matching menu items only.
+- If I type “sparkly tumbler,” it should recommend real merch only if merch suggestions are enabled.
+- It must not invent products, prices, points, rewards, or delivery times.
+
+Check these files:
+- artifacts/candy-crackzzz/src/components/customer/LocalCandyHelper.tsx
+- artifacts/candy-crackzzz/src/lib/localHelper.ts
+- artifacts/candy-crackzzz/src/components/layout/PageLayout.tsx
+- artifacts/candy-crackzzz/src/App.tsx
+- artifacts/candy-crackzzz/src/pages/admin/AdminSettings.tsx
+- artifacts/candy-crackzzz/src/types/index.ts
+- artifacts/candy-crackzzz/src/lib/defaults.ts
+
+If LocalCandyHelper exists but is not visible, wire it into PageLayout or App so it actually renders. Do not leave it as unused code.
+
+D. PROVE IT WORKS
+
+After fixing, test these exact things and give me the results:
+
+1. / loads.
+2. /menu loads.
+3. /merch loads.
+4. /cart loads.
+5. /admin/login loads.
+6. /admin/merch loads.
+7. In /admin/merch, click a merch image and replace it.
+8. Save and refresh; confirm the image stayed.
+9. Public /merch shows the image.
+10. Admin Settings has business address / directions settings.
+11. Admin Orders shows Open Directions for delivery orders.
+12. Local helper/chatbot button is visible on the customer site.
+13. Helper recommends only real products/merch.
+14. pnpm run typecheck passes.
+15. pnpm run build passes.
+
+Final report must include:
+- git status
+- changed file list
+- what was actually implemented
+- where I click to replace merch images
+- where I set the business address
+- where the directions button appears
+- where the chatbot appears
+- whether each acceptance test passed or failed
+
+Do not say “done” unless I can actually see these features in the app.

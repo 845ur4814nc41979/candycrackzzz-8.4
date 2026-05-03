@@ -1,0 +1,107 @@
+PART 6 — Referral code share buttons
+
+Add a Share button next to every referral code shown in the app.
+
+Goal:
+Whenever a referral code is displayed, the customer or admin should be able to tap/click Share and choose how to send it.
+
+Places to add Share button:
+- Rewards page where customer sees their referral code
+- Checkout/rewards area if referral code is shown
+- Order success page if referral code is shown
+- Admin rewards/customer profile area if referral codes are shown
+- Any referral campaign or referral code display card
+
+Share behavior:
+Use the browser native Web Share API when available.
+
+When the user clicks Share:
+- Open the device/browser share sheet if supported.
+- Let the user choose text message, email, Facebook Messenger, WhatsApp, copy, AirDrop, etc., depending on the device.
+- On iPhone/mobile, this should open the normal share menu.
+- On desktop or unsupported browsers, show fallback buttons:
+  - Copy Code
+  - Copy Message
+  - Share by SMS
+  - Share by Email
+
+Share message:
+Create a clean default referral message using the actual referral code and business name.
+
+Example:
+“Use my Candy CrackZZZ referral code CRACK123 when you order and we can both earn rewards!”
+
+If settings.referralProgramDescription exists, optionally include a short version of it, but keep the message simple.
+
+Do not invent rewards:
+- Do not promise a specific discount or point amount unless referrals are enabled and those values exist in settings.
+- If settings.enableReferrals is false, hide referral share buttons or show “Referrals are currently disabled.”
+- If referral bonus points are configured, the share message can say:
+“Use my Candy CrackZZZ referral code CRACK123 when you order. You may earn 10 bonus points and I may earn 15 points after your first completed order.”
+Use the real values from settings:
+settings.referralReferredCustomerBonusPoints
+settings.referralReferrerBonusPoints
+
+Create helper file:
+artifacts/candy-crackzzz/src/lib/referralShare.ts
+
+It should export:
+- buildReferralShareMessage(code, settings)
+- shareReferralCode(code, settings)
+- copyReferralCode(code)
+- copyReferralMessage(code, settings)
+- buildSmsShareUrl(code, settings)
+- buildEmailShareUrl(code, settings)
+
+Create reusable component:
+artifacts/candy-crackzzz/src/components/referrals/ReferralShareButton.tsx
+
+Props:
+- code
+- customerName optional
+- size optional
+- variant optional
+- showCopyButton optional
+- className optional
+
+Component behavior:
+- Button label: “Share”
+- Icon: share icon if lucide-react is available
+- On click, try navigator.share()
+- If navigator.share is not available or fails because user cancels/unsupported, open a small dropdown/popover with:
+  - Copy Code
+  - Copy Message
+  - Text/SMS
+  - Email
+- Show toast when copied:
+  “Referral code copied”
+  or
+  “Referral message copied”
+
+SMS fallback:
+Use:
+sms:?&body=ENCODED_MESSAGE
+
+Email fallback:
+Use:
+mailto:?subject=ENCODED_SUBJECT&body=ENCODED_MESSAGE
+
+Security/privacy:
+- Do not include customer phone, email, order history, or private points in share message.
+- Only share the referral code and public promotional text.
+- Do not expose admin-only customer data.
+
+Admin:
+If shown in admin customer/rewards lists, the Share button should still only share the code/message, not private customer details.
+
+Testing:
+1. Referral code appears on Rewards page.
+2. Share button appears next to it.
+3. On mobile, Share opens native share sheet if supported.
+4. Copy Code works.
+5. Copy Message works.
+6. SMS fallback opens text message with message filled in.
+7. Email fallback opens email with subject/body filled in.
+8. If referrals are disabled, share button is hidden or disabled.
+9. Share message uses the real referral settings and does not invent rewards.
+10. Typecheck/build pass.

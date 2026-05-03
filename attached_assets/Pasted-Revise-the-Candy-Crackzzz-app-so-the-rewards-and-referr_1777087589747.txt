@@ -1,0 +1,210 @@
+Revise the Candy Crackzzz app so the rewards and referrals system in the admin area is much more interactive, editable, and clearly manageable by the owner. Do not break the current working preview, current login, or existing routes. Build on the current rewards/referrals logic instead of replacing it.
+
+High priority:
+I want the admin section to let me actively manage and tune the rewards structure without touching code.
+
+Current goals:
+- keep the app loading and previewing correctly
+- preserve the current admin login and auth setup
+- preserve the current customer rewards page, checkout rewards messaging, referral flow, and order-completion reward awarding
+- expand the admin controls so I can change reward values, referral values, bonus structures, descriptions, and related settings from the UI
+
+What I want added or improved:
+
+1. Make rewards settings much more interactive in admin
+Create or improve an admin rewards management area. This can either be:
+- a dedicated `/admin/rewards` page
+or
+- a major expansion of the existing admin settings section
+
+Either way, it needs to be clear, interactive, and organized.
+
+2. Admin should be able to edit all major rewards values from the UI
+Expose editable controls for:
+- enableRewards
+- rewardsPointsPerDollar
+- rewardsAwardOnCompletedOrder
+- rewardsAllowPromoStacking
+- rewardsTier1Points
+- rewardsTier1Discount
+- rewardsTier2Points
+- rewardsTier2Discount
+- rewardsTier3Points
+- rewardsTier3Discount
+- rewardsDoublePointsEnabled
+- rewardsFirstOrderBonusEnabled
+- rewardsFirstOrderBonusPoints
+- rewardsBirthdayBonusEnabled
+- rewardsBirthdayBonusPoints
+- rewardsSpendThresholdEnabled
+- rewardsSpendThresholdAmount
+- rewardsSpendThresholdBonusPoints
+
+Also expose referral controls:
+- enableReferrals
+- referralReferrerBonusPoints
+- referralReferredCustomerBonusPoints
+- referralBonusOnFirstCompletedOrder
+- referralProgramDescription
+
+Also expose promo-text / opt-in related controls if already part of this app:
+- enablePromoTexts
+- promoTextsDescription
+
+3. Improve the admin UI layout
+Do not make this one long messy form.
+Group controls into sections such as:
+- Program Toggles
+- Base Rewards
+- Reward Tiers
+- Bonus Rules
+- Referral Rules
+- Promo Text / Opt-In Messaging
+- Customer-Facing Descriptions
+
+Use cards, sections, labels, helper text, and input validation.
+Make it mobile-friendly and desktop-friendly.
+
+4. Make tier editing clearer
+For each reward tier, let admin edit:
+- required points
+- discount value
+Show a simple live preview like:
+- 50 pts = $5 off
+- 100 pts = $12 off
+- 200 pts = $25 off
+
+Also show the tiers in sorted order and prevent obviously broken values where possible.
+
+5. Add live preview / simulation tools
+Add a small admin rewards calculator/simulator that lets me test how the current rewards settings behave.
+
+Example inputs:
+- order total
+- is first order yes/no
+- rewards opt-in yes/no
+- has existing rewards profile yes/no
+- referred customer yes/no
+- completed order yes/no
+- promo/double-points event yes/no if relevant
+
+Then show:
+- estimated points earned
+- first-order bonus applied or not
+- spend-threshold bonus applied or not
+- referral bonus applied or not
+- resulting tier progress / next reward
+
+This can be a simple internal admin calculator box on the page.
+
+6. Add better admin visibility into rewards profiles
+In admin, show a manageable list/table/cards of customer reward profiles including:
+- customer name
+- phone
+- email
+- current points
+- lifetime points earned
+- lifetime points redeemed
+- referral code
+- referred by code
+- successful referral count
+- lifetime referral points earned
+- total orders
+- last order date
+- SMS promo opt-in status
+
+Add search/filter if reasonable.
+
+7. Add manual adjustment ability
+Allow the owner/admin to manually adjust a customer’s rewards points from admin.
+
+Support:
+- add points
+- remove points
+- optional note/reason for the adjustment
+
+Store that adjustment in rewards history so it is visible later.
+Do not allow silent changes with no trace.
+
+8. Add rewards history visibility in admin
+For each rewards profile, show recent rewards history entries such as:
+- earned from completed order
+- referral bonus
+- manual adjustment
+- redeemed reward if supported
+- first-order bonus
+- spend-threshold bonus
+- birthday bonus
+
+Include:
+- date/time
+- points amount
+- type
+- note/reason if available
+
+9. Add admin summary metrics
+Show a rewards/referrals summary section in admin with things like:
+- total rewards profiles
+- total current points across profiles
+- total lifetime points earned
+- total referral orders
+- total referral points awarded
+- total successful referrals
+- promo-text opt-in count
+
+10. Preserve public-facing behavior
+Do not break:
+- checkout rewards messaging
+- referral code field in checkout
+- rewards account found / new account messaging
+- customer rewards lookup by phone
+- copy referral code / copy share text
+- pending points display
+- recent referral activity
+- admin order completion awarding logic
+
+11. Make order-award logic respect the admin settings
+Wherever points are calculated or awarded, make sure the calculations truly use the editable admin settings and not hidden hardcoded values.
+
+12. Validation and safety
+Add sensible validation so the owner cannot accidentally set nonsense values, for example:
+- negative points
+- negative discounts
+- tier 2 lower than tier 1
+- spend threshold bonus enabled without a threshold amount
+- referral bonuses negative
+- empty descriptions where they matter
+
+13. Save behavior
+Changes made in the admin rewards area must persist using the app’s existing backend/state persistence flow.
+Do not introduce fake local-only settings.
+Make sure the values survive refresh and reload.
+
+14. Routes/navigation
+Add a clear way to access this section from admin navigation.
+If you create `/admin/rewards`, add it to the admin nav.
+If you keep it inside admin settings, add a clearly labeled rewards section/tab.
+
+15. Preserve current login
+Do not reset or overwrite the current admin username/password.
+Do not wipe current auth or customer state.
+
+16. Keep preview working
+Do not undo the current preview/runtime fixes.
+If you touch anything related to preview, startup, Vite, backend proxying, or `.replit`, verify the app still runs.
+
+Implementation guidance:
+- Reuse the current settings structure already in the app where possible
+- Reuse existing reward profile types and rewards history structures
+- Keep the design consistent with the current Candy Crackzzz admin style
+- Owner should have full access; employee access can remain limited if the app already supports that distinction
+
+After you finish:
+1. verify the app still previews
+2. verify `/admin`, `/admin/orders`, `/rewards`, and checkout still work
+3. verify the new admin rewards tools save and persist
+4. give a concise report listing:
+   - files changed
+   - features added
+   - how to access the new rewards admin tools
+   - any follow-up suggestions

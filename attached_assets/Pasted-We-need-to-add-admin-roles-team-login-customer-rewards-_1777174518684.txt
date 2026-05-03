@@ -1,0 +1,665 @@
+We need to add admin roles/team login, customer rewards lookup/login, rewards redemption at checkout, and reliable notification alerts in the correct order.
+
+Important:
+Do not break the current app loading, admin login, products, merch, orders, messages, rewards, referrals, notification bell, analytics, checkout, directions, smart descriptions, or image upload.
+Do not use OpenAI.
+Do not use Google Maps API.
+Do not use paid APIs for this pass.
+Do not expose secrets, API keys, password hashes, or private customer data.
+Keep everything as no-paid-API as possible.
+
+Current main problem:
+The notification bell lights up, but browser sounds are unreliable, especially on iPhone. Browser chimes only work when the admin page is open and after user interaction. I want real notifications to come through even when the phone is asleep/locked if possible.
+
+Build this in order:
+
+ORDER OF WORK:
+1. Stabilize admin login and roles.
+2. Add Team/Admin Users page.
+3. Split site settings vs system/server settings permissions.
+4. Add customer rewards lookup/login.
+5. Add rewards redemption at checkout.
+6. Fix notification sounds while admin page is open.
+7. Add future-ready real push notifications for locked/sleeping phone alerts.
+8. Test all roles, rewards, checkout, notifications, and builds.
+
+PART 1 — Admin roles and permissions
+
+Expand the current admin role system.
+
+Keep existing owner role.
+
+Add these roles:
+
+owner:
+- Full access to everything.
+- Can create/edit/disable all admin users.
+- Can change all settings.
+- Can view system/server status.
+- Can import/export backups.
+- Can manage products, merch, orders, messages, rewards, campaigns, payments, branding, analytics, notifications, and team.
+
+site_admin:
+- Can change public site settings.
+- Can manage business info, branding, menu/products, merch, pickup/delivery settings, payment instructions, rewards settings, referral settings, homepage/store content, and image/content settings.
+- Cannot manage server secrets.
+- Cannot view private technical secrets.
+- Cannot create owner users.
+- Cannot delete/disable owner users.
+
+system_admin:
+- Can view and manage technical/admin setup areas.
+- Can view health/status panel.
+- Can view whether services are configured, such as database, email, SMS, OpenAI, maps, push notifications, but must never see actual secret values.
+- Can manage notification settings, backup/import/export, maintenance status, push setup, analytics settings, and system checks.
+- Cannot see or copy secret values.
+- Cannot change product pricing/content unless also given site_admin permissions.
+
+campaign_admin:
+- Can manage rewards campaigns, referral campaigns, birthday rewards, holiday rewards, promo campaigns, customer rewards profiles, points, and customer reward history.
+- Can see how many rewards members exist.
+- Can see point balances.
+- Can add/subtract points with required reason/note.
+- Cannot change core site/server settings.
+- Cannot manage admin users.
+
+staff:
+- Can view and update orders.
+- Can view/respond to messages if supported.
+- Can see notifications.
+- Can mark orders as confirmed, ready, picked up, completed, cancelled.
+- Cannot change products, merch, settings, rewards rules, payment settings, branding, campaigns, or admin accounts.
+
+viewer:
+- Read-only admin.
+- Can view dashboard, orders, messages, products, merch, campaigns, analytics.
+- Cannot edit anything.
+
+Use clear permission flags internally, not just role names.
+
+Suggested permission flags:
+- manageAdmins
+- manageSiteSettings
+- manageSystemSettings
+- manageProducts
+- manageMerch
+- manageOrders
+- manageMessages
+- manageRewards
+- manageCampaigns
+- managePayments
+- manageBranding
+- viewAnalytics
+- manageAnalytics
+- manageNotifications
+- managePushNotifications
+- manageBackups
+- viewOnly
+
+Create:
+artifacts/candy-crackzzz/src/lib/permissions.ts
+
+Export:
+- roleHasPermission(role, permission)
+- userHasPermission(user, permission)
+- roleLabels
+- roleDescriptions
+- rolePermissions
+
+Backend must enforce permissions too. Do not rely only on frontend hiding buttons.
+
+PART 2 — Team/Admin Users page
+
+Create or improve a Team page.
+
+Route:
+/admin/team
+
+File:
+artifacts/candy-crackzzz/src/pages/admin/AdminTeam.tsx
+
+Add sidebar link:
+Team
+
+Only owner can access Team page by default.
+
+Team page features:
+- Show admin users.
+- Username.
+- Role.
+- Active/disabled status.
+- Created date.
+- Must change password status.
+- Last login if available.
+- Active sessions if available.
+- Create new admin/staff user.
+- Edit username.
+- Change role.
+- Reset password.
+- Force password change on next login.
+- Disable account.
+- Re-enable account.
+- Delete account only if safe.
+- Prevent disabling/deleting the last active owner.
+- Show warning before disabling/deleting users.
+
+Create user form:
+- username
+- temporary password
+- role
+- must change password toggle
+- enabled/disabled
+
+When a new user is created:
+- Show temporary username/password once.
+- Allow owner to copy it.
+- Do not expose password later.
+- Log the action in admin activity logs.
+
+Password rules:
+- Minimum 8 characters.
+- Recommend stronger password.
+- Do not store plain text password.
+- Store only password hash.
+- Never expose password hash in frontend.
+
+PART 3 — Protected routes and permissions
+
+Update AdminLayout and ProtectedRoute so pages check permissions.
+
+Examples:
+- /admin/products requires manageProducts
+- /admin/merch requires manageMerch
+- /admin/orders requires manageOrders
+- /admin/messages requires manageMessages
+- /admin/rewards requires manageRewards
+- /admin/campaigns requires manageCampaigns
+- /admin/settings requires manageSiteSettings
+- /admin/branding requires manageBranding
+- /admin/payments requires managePayments
+- /admin/team requires manageAdmins
+- /admin/system or health/status area requires manageSystemSettings
+- /admin/account available to all logged-in admins
+
+Do not just hide sidebar links. If a user manually types a URL, ProtectedRoute must block them.
+
+Blocked message:
+“You do not have permission to access this area.”
+
+PART 4 — Site settings vs system/server settings
+
+Split settings into clearer areas.
+
+Site Settings:
+- business name
+- business phone
+- business email
+- business address
+- service area
+- about text
+- pickup/delivery settings
+- directions settings
+- public store settings
+- product display settings
+- rewards/referrals public settings
+- homepage/gallery/seasonal toggles
+- branding/logo/color settings
+- payment instructions
+
+System Settings:
+- status/health panel
+- database mode/status
+- session secret configured yes/no
+- admin username/password secret configured yes/no
+- OpenAI configured yes/no only
+- Google Maps configured yes/no only
+- email configured yes/no only
+- SMS configured yes/no only
+- web push configured yes/no only
+- notification sound settings
+- push notification settings
+- analytics settings
+- import/export backup
+- maintenance mode if added
+
+Important:
+Do not show actual secret values.
+Do not allow browser/admin UI to reveal API keys.
+For secrets, only show configured/missing status.
+
+PART 5 — Campaign/rewards management
+
+Campaign admin should be able to:
+- create campaigns
+- edit campaigns
+- enable/disable campaigns
+- set birthday rewards
+- set holiday rewards
+- set referral rewards
+- set point multipliers
+- set expiration days
+- choose applies to all/candy/merch
+- see how many rewards members exist
+- see how many customers have points
+- see total outstanding points
+- see total lifetime points earned
+- see total lifetime points redeemed
+- see active referral codes
+- see successful referral count
+- search rewards profiles by name, phone, email, referral code
+- add points manually with reason
+- subtract/redeem points manually with reason
+- view each customer’s rewards history
+
+Add dashboard cards in rewards/campaign area:
+- Total rewards members
+- Members with points
+- Total current outstanding points
+- Lifetime points earned
+- Lifetime points redeemed
+- Active referral codes
+- Successful referrals
+- Birthday rewards enabled yes/no
+- Holiday campaigns active count
+
+Manual point adjustment rules:
+- Require reason/note.
+- Record admin username who made adjustment.
+- Record timestamp.
+- Do not allow negative point balance unless owner specifically allows it.
+- Show history entry.
+
+PART 6 — Customer rewards login / lookup
+
+Add a customer-facing rewards login or lookup system.
+
+Goal:
+Customer can safely see:
+- current points
+- referral code
+- rewards history
+- referral bonus info
+- points until next reward
+- recent completed orders if safe
+- available campaigns/rewards if active
+
+Do not show private info just because someone types a phone number.
+
+No-paid-API version:
+Use a basic verification method that does not require SMS/email yet.
+
+Customer enters:
+- phone number
+and one of:
+- email
+- last order id
+- referral code
+
+Only return a safe summary on exact match.
+
+Backend route:
+POST /api/cc/rewards/lookup
+
+Payload:
+- phone
+- email optional
+- orderId optional
+- referralCode optional
+
+Response:
+- matched true/false
+- safe rewards profile summary only
+- masked phone/email
+- currentPoints
+- referralCode
+- nextRewardTier
+- rewardsHistory safe fields
+- campaigns/rewards visible to customer
+
+Security:
+- Do not expose all reward profiles to public.
+- Do not allow blank searches.
+- Do not allow scraping.
+- Add simple rate limit/debounce.
+- Invalid lookup should return generic “No matching rewards account found or verification failed.”
+- Never expose admin notes, password data, private logs, or unrelated customers.
+
+Customer rewards page:
+Route:
+/rewards
+
+Add:
+- Check points / login area
+- phone input
+- email or last order id input
+- lookup button
+- safe rewards summary
+- referral code with Share button
+- point balance
+- next reward tier
+- rewards history
+- referral program explanation
+- birthday signup fields if enabled
+
+PART 7 — Apply rewards at checkout
+
+Add a way for customers to apply rewards directly at checkout.
+
+Checkout rewards requirements:
+- If rewards are enabled, show “Apply Rewards” section in checkout.
+- Customer enters phone number and verification info, or uses rewards lookup/login from Part 6.
+- If a matching verified rewards profile is found, show current points.
+- Show available reward tiers based on settings:
+  - rewardsTier1Points / rewardsTier1Discount
+  - rewardsTier2Points / rewardsTier2Discount
+  - rewardsTier3Points / rewardsTier3Discount
+- Customer can choose one available reward to apply.
+- Reward discount should reduce checkout total.
+- Show points being redeemed.
+- Show new estimated remaining points.
+- Do not allow redeeming more points than customer has.
+- Do not allow reward discount greater than order total.
+- Respect settings.rewardsAllowPromoStacking.
+- If promo stacking is off, prevent combining reward discount with other promo/campaign discounts.
+- If order is cancelled, do not permanently redeem points.
+- Final point deduction should happen when order is marked completed or confirmed based on a clear admin setting.
+- Store pending redemption on the order.
+
+Order model should support:
+- rewardsRedeemedPoints
+- rewardsDiscountAmount
+- rewardsRedemptionStatus: pending/applied/cancelled
+- rewardsProfileId or safe reference
+- rewardsAppliedAt
+- rewardsRedeemedAt
+
+Admin order view:
+- Show applied reward.
+- Show points pending redemption.
+- Allow admin to approve/apply redemption if needed.
+- On completed order, deduct redeemed points and record rewards history.
+- Prevent double deduction.
+
+Customer checkout UI:
+- Show subtotal
+- delivery fee if any
+- rewards discount
+- final total
+- estimated points earned on remaining eligible total
+- clear explanation:
+“Rewards redemption is applied after the order is confirmed/completed.”
+
+PART 8 — Notification sounds while admin page is open
+
+Fix current browser sound behavior first.
+
+Current issue:
+Bell lights up but sound is unreliable. It asks to enable sound every login and often does not play on iPhone.
+
+Requirements:
+- Store notification sound unlock state in localStorage, but still verify actual browser audio state.
+- Do not keep asking every login if already enabled and ready.
+- If localStorage says enabled but browser audio is locked, show a small prompt only.
+- Add a visible admin sound status:
+  - Sounds Off
+  - Sounds Enabled but Locked
+  - Sounds Ready
+  - Browser Blocked Sound
+  - iPhone Silent Mode/System Volume may block sound
+- Add obvious buttons:
+  - Enable Sounds
+  - Test Order Sound
+  - Test Message Sound
+  - Test General Sound
+
+iPhone requirements:
+- Unlock must happen directly inside the button tap handler.
+- Do not unlock inside useEffect.
+- Do not unlock after timeout.
+- Do not unlock only when notification arrives.
+- Create/resume AudioContext directly from the tap event.
+- Play confirmation tone immediately after unlock.
+- Set unlocked true only after the sound successfully starts.
+- Add HTMLAudio/base64 wav fallback if Web Audio fails.
+- If iPhone blocks sound, show:
+“iPhone blocked browser sound. For reliable locked-screen alerts, enable push notifications or SMS/email alerts.”
+
+Keep sound behavior:
+- Order notification = order chime.
+- Message notification = message chime.
+- General notification = general chime.
+- Do not play old notifications on first load.
+- Customer pages stay silent.
+
+PART 9 — Real push notifications for sleeping/locked phone
+
+Because browser chimes do not reliably play when iPhone is asleep/locked, add future-ready Web Push Notifications.
+
+Goal:
+When a new order or message comes in, admin can receive a real device notification even if the admin page is not open, where supported.
+
+Important:
+- No Twilio.
+- No paid SMS.
+- No paid API.
+- Use standard Web Push / Push API / Service Worker.
+- Use VAPID keys generated/stored on the server side.
+- Never expose private VAPID key to frontend.
+- Only expose public VAPID key to frontend.
+- Keep browser chime as fallback when admin page is open.
+
+PWA/iPhone note:
+Add clear admin instructions:
+“On iPhone, push notifications usually require installing the site to the Home Screen as a web app, granting notification permission, and keeping notifications allowed in iOS Settings.”
+
+Push setup:
+Create service worker:
+artifacts/candy-crackzzz/public/service-worker.js
+
+It should:
+- receive push events
+- show notifications
+- handle notificationclick
+- open /admin/orders for order notifications
+- open /admin/messages for message notifications
+- open /admin for general notifications
+
+Backend:
+Add routes:
+GET /api/cc/push/public-key
+POST /api/cc/push/subscribe
+POST /api/cc/push/unsubscribe
+POST /api/cc/push/test
+POST /api/cc/push/send-test-order
+POST /api/cc/push/send-test-message
+
+Store push subscriptions:
+- in Postgres if database exists
+- in file fallback if no database exists
+
+Subscription fields:
+- id
+- adminUserId
+- endpoint
+- keys
+- userAgent
+- deviceLabel optional
+- createdAt
+- lastSeenAt
+- disabledAt optional
+
+Use web-push package if acceptable and free:
+- Generate VAPID keys if missing in development
+- For production, support secrets:
+  VAPID_PUBLIC_KEY
+  VAPID_PRIVATE_KEY
+  VAPID_SUBJECT
+
+If keys are missing:
+- System settings should show “Push not fully configured.”
+- App should still work.
+- For development, allow generated temporary keys with a warning.
+
+Frontend:
+Create:
+artifacts/candy-crackzzz/src/lib/pushNotifications.ts
+artifacts/candy-crackzzz/src/components/admin/PushNotificationSetup.tsx
+
+Admin setup UI:
+- “Enable Device Push Notifications”
+- “Send Test Push”
+- “Test Order Push”
+- “Test Message Push”
+- Show permission status:
+  - unsupported
+  - default/not requested
+  - granted
+  - denied
+- Show service worker status.
+- Show subscription status.
+- Show device label.
+- Allow unsubscribe/remove this device.
+
+Admin settings:
+Add push settings:
+- pushNotificationsEnabled
+- pushOrderNotificationsEnabled
+- pushMessageNotificationsEnabled
+- pushGeneralNotificationsEnabled
+- pushRequireOwnerOnly or allowed roles if useful
+
+When new order notification is created:
+- create normal in-app notification
+- update bell
+- play in-page sound if admin page open and sound ready
+- send push notification to subscribed admin devices if push enabled
+
+When new message notification is created:
+- same as above, but message type
+
+Push notification content:
+Order:
+Title: “New Candy CrackZZZ Order”
+Body: “New order from {customerName} — ${total}”
+Click opens /admin/orders
+
+Message:
+Title: “New Candy CrackZZZ Message”
+Body: “New message from {name}”
+Click opens /admin/messages
+
+General:
+Title: “Candy CrackZZZ Alert”
+Body: short notification body
+Click opens /admin
+
+Security:
+- Only logged-in admins can subscribe devices.
+- Public customers cannot subscribe to admin notifications.
+- Do not include private details beyond safe summary.
+- Do not expose full address in push body.
+- Do not expose payment info in push body.
+- Do not expose customer phone/email in push body unless owner specifically enables it later.
+
+Fallback:
+If push unsupported or blocked:
+- Show clear message.
+- Browser bell and in-page sound still work.
+- Do not crash.
+
+PART 10 — Activity logs
+
+Track important admin actions:
+- admin user created
+- admin user disabled
+- role changed
+- password reset
+- settings changed
+- product created/edited/deleted
+- merch created/edited/deleted
+- campaign created/edited/deleted
+- points manually adjusted
+- rewards redeemed
+- push device subscribed/unsubscribed
+- backup exported/imported
+
+Show activity logs to owner/system_admin only.
+
+PART 11 — Testing
+
+Test roles:
+1. Owner can access everything.
+2. Site admin can edit site settings but cannot manage admin users.
+3. System admin can see system settings/status but cannot see secrets.
+4. Campaign admin can manage rewards/campaigns but cannot edit site/server settings.
+5. Staff can view/update orders/messages only.
+6. Viewer can see but not edit.
+
+Test Team page:
+1. Owner creates staff user.
+2. Staff logs in.
+3. Staff cannot access settings/products/merch/rewards.
+4. Owner creates campaign admin.
+5. Campaign admin can access campaigns/rewards.
+6. Owner creates site admin.
+7. Site admin can access permitted site settings.
+8. Cannot disable/delete last owner.
+
+Test customer rewards lookup:
+1. Valid customer lookup shows safe rewards summary.
+2. Invalid lookup does not leak data.
+3. Referral code shows Share button.
+4. Public cannot access admin rewards data.
+
+Test checkout rewards:
+1. Customer verifies rewards at checkout.
+2. Customer sees available reward tiers.
+3. Customer applies reward.
+4. Total decreases correctly.
+5. Points are marked pending.
+6. Admin sees reward redemption on order.
+7. Completing order deducts points once.
+8. Cancelled order does not deduct points.
+9. Cannot redeem more points than available.
+
+Test in-page sounds:
+1. Desktop: Enable Sounds, test all three sounds.
+2. iPhone: open admin page, turn volume up, silent switch off, tap Enable Sounds, test sounds.
+3. Submit test order while admin page is open.
+4. Bell lights and order sound plays if browser allows.
+5. Submit test message.
+6. Bell lights and message sound plays if browser allows.
+7. It does not ask to enable sounds every login if already ready.
+
+Test push notifications:
+1. Register service worker.
+2. Enable push on desktop.
+3. Send test push.
+4. Submit test order and receive push.
+5. Submit test message and receive push.
+6. iPhone: add site to Home Screen if needed, open web app, enable push, grant permission, send test push.
+7. Confirm push notification appears when app is backgrounded/locked if supported.
+8. If unsupported/blocked, show clear admin instructions.
+
+Build:
+Run:
+pnpm run typecheck
+pnpm run build
+
+Fix all errors.
+
+Report back:
+1. What roles were added.
+2. What permissions each role has.
+3. Where the Team page is.
+4. How to create a new admin login.
+5. Which roles can change site settings.
+6. Which roles can change system/server settings.
+7. How customer rewards lookup works.
+8. How rewards are applied at checkout.
+9. How browser sounds work.
+10. Whether iPhone browser sound is still limited.
+11. How web push notifications work.
+12. What iPhone setup is required for locked-screen notifications.
+13. What secrets are needed for production push, if any.
+14. Whether typecheck/build passed.

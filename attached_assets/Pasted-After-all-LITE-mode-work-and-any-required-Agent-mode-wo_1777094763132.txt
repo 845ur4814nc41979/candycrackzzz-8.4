@@ -1,0 +1,52 @@
+After all LITE-mode work and any required Agent-mode work is completed, give me a full rundown of the exact capabilities of this app.
+
+I want the rundown written in plain English, organized clearly, so I know exactly what the Candy CrackZZZ app can do right now and what is only prepared for later.
+
+Include these sections:
+
+1. Customer-facing capabilities
+Explain everything a customer can currently do, including menu browsing, candy ordering, merch browsing, cart, checkout, rewards wallet, pickup options, coupons, product options, and any account/customer profile features.
+
+2. Admin capabilities
+Explain everything admin can currently control, including candy products, merch products, photos, prices, flavors, product descriptions, AI tools, rewards, orders, customers, payment settings, coupons, site settings, notices, disclaimers, and uploads.
+
+3. Merch capabilities
+Explain exactly how the merch page works, what item statuses are available, how inventory works, how points/rewards work for merch, and how admin adds or edits merch items.
+
+4. Rewards capabilities
+Explain all current rewards features, including points, birthday rewards, holiday rewards, manual rewards, customer groups, loyalty milestones, win-back campaigns, points multipliers, reward wallet, expiration dates, reward rules, and reward history.
+
+5. AI capabilities
+Explain what AI can do inside the app, including AI-generated candy descriptions, merch descriptions, product name suggestions, reward message copy, and anything that uses uploaded images or product details.
+
+6. Order and checkout capabilities
+Explain how orders are created, what information is captured, what statuses admin can use, how rewards/coupons apply, and what still needs to be connected if payment processing is not live.
+
+7. Messaging and notification capabilities
+Explain what is currently working for email, SMS/text, push notifications, in-app notifications, QR/coupon codes, and what still needs API keys or external services.
+
+8. Payment capabilities
+Explain which payment methods are supported or prepared, including Cash App, Venmo, Zelle, Square, QR code payments, cash/manual payment, or any other configured method. Clearly separate live working payment options from placeholder/prepared payment options.
+
+9. Data/storage capabilities
+Explain what data is saved permanently, where it is stored, what still uses temporary storage if anything, and what database/storage setup is needed for production.
+
+10. Security capabilities
+Explain how admin access is protected, what routes/settings are private, what secrets are required, and whether any security cleanup is still needed before real public use.
+
+11. Mobile and design capabilities
+Explain whether the customer side and admin side are mobile-friendly and what pages/layouts were tested.
+
+12. Export/backup capabilities
+Explain whether admin can export orders, customers, products, merch, rewards, coupons, or other records.
+
+13. Current limitations
+Give me an honest list of what the app does not fully do yet, what is only mocked or prepared, what still needs API keys, and what should be finished before real customers use it.
+
+14. Setup checklist
+Give me a step-by-step checklist of what I need to do next, including any Replit Secrets, database setup, image uploads, payment setup, SMS/email setup, reward setup, and test orders.
+
+15. Testing checklist
+Give me a customer-flow checklist and an admin-flow checklist so I can test the app myself.
+
+Do not give me a vague summary. Be specific and tell me what works, what is partially built, what is placeholder/demo, and what still needs to be connected.

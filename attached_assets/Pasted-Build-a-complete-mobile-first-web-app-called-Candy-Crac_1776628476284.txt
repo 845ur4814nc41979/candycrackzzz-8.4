@@ -1,0 +1,444 @@
+Build a complete mobile-first web app called Candy Crackzzz.
+
+Use the uploaded Candy Crackzzz logo as the starting brand asset. The app should feel fun, bold, colorful, modern, candy-shop styled, and easy to use on a phone, while still looking polished on desktop. The design language should use bright candy colors inspired by the logo: electric blue, hot pink, purple, white highlights, and dark outlines or dark contrast areas. The site should feel playful and energetic without becoming cluttered or childish.
+
+This app is for a candy business that sells candy-coated fruit, trays, custom treats, and seasonal specials. The app needs both a public customer-facing storefront and a lightweight admin management area. Build the app so it is usable right away as an ordering/request site even before real payments are fully enabled.
+
+Very important overall rules:
+- Build this as a real app shell with working frontend flows and clean structure.
+- Make it mobile-first.
+- Make navigation simple and obvious.
+- Large tap targets, clean spacing, clear forms.
+- Do not overcomplicate the first version.
+- Keep the code organized so features can be expanded later.
+- Prioritize usability on iPhone-sized screens.
+- Include an admin settings area where certain features can be toggled on or off.
+- Payment methods must be toggleable.
+- Square must exist as an optional future payment method, but must be OFF by default and hidden from customers unless enabled by the admin.
+- The customer should never see disabled payment options.
+- Build the app so it still works well as an order-request app even when online payments are disabled.
+
+Use this structure:
+
+PUBLIC CUSTOMER-FACING APP
+1. Home
+2. Menu
+3. Product Detail
+4. Order Request / Cart or Inquiry
+5. Contact / Socials
+6. Photo Gallery
+7. Seasonal Specials
+8. Custom Orders
+
+ADMIN / BUSINESS SIDE
+1. Admin Dashboard
+2. Products Management
+3. Orders Management
+4. Settings
+5. Branding
+6. Payments
+7. Availability / Delivery Controls
+
+GENERAL APP GOAL
+Customers should be able to browse candy items, view photos, read descriptions, select options, submit an order request, and optionally pay only if payments are enabled. The owner should be able to upload product photos, create and edit menu items, control business settings, and toggle payment methods on and off without changing code.
+
+VISUAL DESIGN REQUIREMENTS
+- Make the logo large and prominent on the Home page.
+- Use bright candy-shop styling but keep the layout clean.
+- Rounded cards, glossy accents, bold section headers, and visually appealing menu tiles are good.
+- Avoid making the app feel corporate or boring.
+- Do not use ugly default placeholder styles.
+- Product cards should feel visually rich and photo-friendly.
+- Buttons should feel modern and easy to tap.
+- Use a strong mobile bottom navigation or clear hamburger/top navigation depending on what feels better on small screens.
+- Keep the overall look energetic and “treat-focused.”
+- Include subtle background accents or gradients that match the candy vibe, but do not reduce readability.
+
+PUBLIC PAGES IN DETAIL
+
+HOME PAGE
+Build a homepage with:
+- the uploaded Candy Crackzzz logo near the top
+- a bold hero section
+- a short brand tagline
+- an “Order Now” button
+- a “Browse Menu” button
+- featured items section
+- seasonal specials section
+- custom orders section
+- customer review/testimonial placeholders
+- social follow callout
+- short “About Candy Crackzzz” section
+- colorful visual layout
+- easy path into the menu and order request flow
+
+Possible homepage content structure:
+- Header with logo and nav
+- Hero banner with logo and tagline
+- Featured products row/grid
+- Seasonal specials banner
+- Party trays / custom order callout
+- Photo preview strip
+- Quick contact / social links
+- Footer
+
+MENU PAGE
+Build a menu page with category filtering and product cards.
+
+Categories should include:
+- Candy Grapes
+- Candy Pineapple
+- Party Trays
+- Seasonal Specials
+- Custom Orders
+
+Each product card should include:
+- product photo
+- product name
+- short description
+- category
+- flavor or style tag
+- price or price placeholder
+- availability label if needed
+- “View Item” button
+- optional featured or best seller tag
+- optional sold out label if disabled
+
+Add:
+- category filter tabs/buttons
+- search bar
+- simple sorting or filter support if easy
+- clear mobile card layout
+- attractive visual design
+
+PRODUCT DETAIL PAGE
+Each product detail page should include:
+- larger product image
+- optional image gallery or multiple images if possible
+- product name
+- category
+- description
+- flavor notes
+- color/theme notes
+- pricing display
+- quantity selector
+- special instructions field
+- add to order or request button
+- availability note
+- custom order note if applicable
+
+For products that allow customization:
+- show customizable field areas such as colors, theme, event type, or flavor choices
+- allow notes entry
+
+PHOTO GALLERY PAGE
+Build a gallery page that highlights product photos:
+- candy grapes
+- pineapple
+- trays
+- seasonal designs
+- custom items
+- allow image grid layout
+- lightbox/modal preview if easy
+- mobile-friendly browsing
+
+SEASONAL SPECIALS PAGE
+Create a dedicated seasonal specials page or section:
+- holiday offerings
+- limited-time colors/themes
+- themed trays
+- promotional banners
+- optional “limited availability” tag
+
+CUSTOM ORDERS PAGE
+Create a custom order page or section where customers can submit:
+- custom event type
+- desired colors/theme
+- product type
+- quantity estimate
+- due date
+- special notes
+- inspiration notes
+- optional photo upload placeholder if easy later, but shell is enough if upload is too much for first pass
+
+ORDER REQUEST / CART / INQUIRY FLOW
+Build a simple order request flow that can work even without payments.
+It should allow the customer to:
+- add one or more items
+- review requested items
+- provide contact information
+- choose pickup or delivery if enabled
+- choose requested date/time
+- provide special instructions
+- submit order request
+
+Order request fields:
+- customer full name
+- phone number
+- email optional
+- requested date
+- requested time
+- pickup or delivery
+- delivery address if delivery is enabled
+- order notes
+- special instructions
+- event type optional
+- quantity
+- selected items summary
+
+Support both behaviors:
+1. simple inquiry/request mode
+2. future payment-ready checkout mode
+
+For version one, if payments are disabled, the flow should still end in a clean “Request Submitted” confirmation.
+
+CONTACT PAGE
+Build a contact page with:
+- business phone
+- business email
+- service area
+- social media links
+- pickup/delivery info
+- business hours placeholders
+- short contact form if easy
+- map/service area placeholder if desired
+
+ADMIN SIDE IN DETAIL
+
+ADMIN DASHBOARD
+Create an admin dashboard that shows:
+- total products
+- featured items
+- active orders
+- pending requests
+- sold out items
+- enabled payment methods
+- delivery enabled/disabled
+- quick links to products, orders, settings, payments
+
+Keep the admin dashboard clean and practical.
+
+PRODUCTS MANAGEMENT
+Create a products management section where the owner can:
+- add product
+- edit product
+- delete product
+- upload product photo
+- set product name
+- set category
+- set description
+- set flavor
+- set color/theme notes
+- set price
+- mark as available or unavailable
+- mark as featured
+- mark as seasonal
+- mark as custom order eligible
+- control whether item is visible to customers
+
+Include a clear product form with fields such as:
+- name
+- slug or ID
+- category
+- description
+- short description
+- price
+- image upload
+- featured toggle
+- available toggle
+- sold out toggle
+- seasonal toggle
+- custom order toggle
+- flavor/style tags
+- color/theme notes
+
+PHOTO UPLOAD REQUIREMENT
+This is very important:
+I want to be able to click and upload photos for products.
+Build a real product image upload flow or at least a well-structured upload-ready placeholder system that is clearly designed to support:
+- upload image
+- preview image
+- replace image
+- remove image
+
+If a fully persistent backend upload system is too much for the first pass, still create the UI and architecture cleanly, and use local/mock data or browser storage for the demo version. But the app must clearly support photo uploads as a core feature.
+
+ORDERS MANAGEMENT
+Build an orders/request management page where the owner can view incoming requests.
+Each order/request card should show:
+- customer name
+- phone
+- order items
+- date needed
+- pickup or delivery
+- order status
+- notes
+- payment status
+- total or estimated total if visible
+- created date
+
+Add status options like:
+- New
+- Pending
+- Confirmed
+- Ready
+- Completed
+- Cancelled
+
+Keep it simple but useful.
+
+SETTINGS PAGE
+This page is critical. Build a real settings page with sections.
+
+Section 1: Business Info
+- business name
+- logo upload or replace
+- phone
+- email
+- service area text
+- social links
+- about text
+
+Section 2: Ordering Controls
+- enable ordering: on/off
+- enable custom orders: on/off
+- enable seasonal specials section: on/off
+- enable gallery: on/off
+- enable featured items section: on/off
+
+Section 3: Delivery / Pickup Controls
+- enable pickup: on/off
+- enable delivery: on/off
+- service area text
+- delivery fee enabled: on/off
+- delivery fee amount field
+- minimum order amount optional placeholder
+
+Section 4: Pricing Display Controls
+- show prices publicly: on/off
+- show sold out items: on/off
+- allow request without price: on/off
+
+Section 5: Payment Controls
+This is very important.
+Build the payment area with toggle logic.
+
+Include:
+- enable payments: on/off
+- enable Square: on/off
+- allow deposit only: on/off
+- allow full online payment: on/off
+- allow cash at pickup: on/off
+- allow manual invoice only: on/off
+
+Behavior rules:
+- Square must be OFF by default
+- if enable payments is OFF, hide all customer payment UI
+- if Square is OFF, do not show Square as an option anywhere customer-facing
+- if deposits are OFF, do not show deposit language
+- if cash at pickup is OFF, do not show it
+- if manual invoice is OFF, do not show it
+- only show enabled payment methods to customers
+- the admin should be able to turn these on and off without changing code
+
+PAYMENTS PAGE / MODULE
+Build a Payments section in admin where payment settings are controlled.
+
+Important:
+- Do not require a live Square account in version one.
+- Build the architecture and settings for Square integration, but keep it disabled by default.
+- Add placeholder fields for Square configuration only if appropriate, but do not force them to be filled out.
+- Make the app work fully without online payment enabled.
+- The app should still function as an order request system if payments are off.
+
+Customer payment behavior:
+- If online payments are disabled, the customer sees only order request submission flow.
+- If online payments are enabled later, customer can see the allowed method(s).
+- If Square is enabled later, show payment option cleanly.
+- If Square is disabled, it should not appear as an option.
+
+BRANDING REQUIREMENTS
+Build the branding system so the owner can:
+- upload/replace logo
+- update business name
+- control whether logo is shown
+- preview the branding in the app
+
+The uploaded Candy Crackzzz logo should be the default starting brand asset.
+Use it in the initial version where appropriate.
+
+DATA / APP STRUCTURE REQUIREMENTS
+Keep the code well organized.
+Use a sensible structure for:
+- pages
+- components
+- admin components
+- product cards
+- settings
+- order forms
+- navigation
+- mock/local data
+
+If needed, use local mock data or browser storage for the first version.
+If possible, persist basic data locally for the demo:
+- products
+- settings
+- order requests
+- branding
+
+If a full backend is too much for the first pass, still build the architecture cleanly so that backend integration can be added later without rewriting everything.
+
+TECH / BUILD REQUIREMENTS
+- Build this as a real responsive web app
+- mobile-first
+- clean reusable components
+- easy to expand later
+- use local state or local storage if needed in version one
+- do not add login/auth yet unless it is very lightweight and necessary
+- do not add subscriptions
+- do not add unnecessary complexity
+- do not build real Square integration yet unless the architecture is simple and clearly optional
+- do not force payment setup
+- do not make the app dependent on online payment
+- keep the app useful even with payment features off
+
+CUSTOMER EXPERIENCE REQUIREMENTS
+The public side should feel easy and fun:
+- large buttons
+- easy category browsing
+- quick photo-heavy shopping feel
+- obvious order path
+- no confusion when payments are disabled
+- clear confirmation after submitting a request
+
+ADMIN EXPERIENCE REQUIREMENTS
+The admin side should feel like a lightweight business control center:
+- easy product editing
+- easy photo upload
+- easy settings toggles
+- easy order viewing
+- easy payment-method control
+- no complicated developer-only workflows
+
+PLACEHOLDER DATA REQUIREMENTS
+Populate the initial app with sample Candy Crackzzz items such as:
+- Blue Raspberry Candy Grapes
+- Strawberry Blast Candy Grapes
+- Tropical Candy Pineapple Cups
+- Party Tray Sampler
+- Valentine’s Special Tray
+- Custom Event Candy Box
+
+Use attractive placeholder descriptions and prices.
+Use placeholders that feel on-brand, not boring generic dummy content.
+
+FINAL IMPORTANT INSTRUCTIONS
+- Build the public storefront and the admin side in one app shell.
+- Make the logo and colors visually strong.
+- Make product photo upload and product management feel central.
+- Make payment methods modular and toggle-driven.
+- Square must be designed as optional and OFF by default.
+- Customers should only see what is enabled.
+- Keep the first version practical, attractive, and ready to expand later.
+- Do not leave the app looking like a generic admin template.
+- Make it feel like a real candy business app from the first impression.

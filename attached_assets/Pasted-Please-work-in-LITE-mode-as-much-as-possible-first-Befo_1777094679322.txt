@@ -1,0 +1,50 @@
+Please work in LITE mode as much as possible first.
+
+Before switching to full Agent mode, complete everything that can reasonably be done in LITE mode, including code review, file inspection, planning, small edits, UI adjustments, cleanup, simple component updates, simple route updates, text changes, placeholder setup, admin form layout, settings structure, comments, and any safe changes that do not require deeper automated multi-file rebuilding.
+
+Do not immediately switch to full Agent mode unless it is truly required.
+
+Work in this order:
+
+1. Inspect the existing app structure in LITE mode.
+2. Identify the current frontend, backend, admin, rewards, menu, merch, checkout, storage/database, and settings files.
+3. Make all safe LITE-mode updates first.
+4. Preserve all existing working features.
+5. Do not remove or overwrite existing functionality.
+6. Do not create duplicate systems if a matching system already exists.
+7. Reuse the current app patterns, styles, components, storage/database approach, and admin structure where possible.
+8. Add comments or clear TODO markers for anything that cannot be fully completed in LITE mode.
+9. Only after all possible LITE-mode work is complete, switch to full Agent mode for anything that requires deeper multi-file implementation, database/schema changes, backend routes, checkout logic, rewards automation, messaging integrations, file upload handling, or larger refactoring.
+
+When switching from LITE mode to full Agent mode, first provide a short explanation of:
+What was completed in LITE mode.
+What still needs Agent mode.
+Why Agent mode is required.
+What files or systems will be touched next.
+
+The major features I want built or prepared are:
+
+Merch page with customer-facing merch products.
+Admin merch controls.
+Merch product photos/image upload or image URL fallback.
+Merch status toggles: Available, Coming Soon, Out of Stock, Limited Quantity.
+Per-item rewards/points eligibility for merch.
+AI-generated descriptions and product name suggestions for candy and merch.
+Rewards campaign system for birthdays, holidays, manual rewards, customer groups, win-back rewards, loyalty milestones, points multipliers, and reward wallet.
+Admin controls for sending rewards by in-app reward wallet, email, SMS/text, push notification if available, QR/coupon code if needed.
+Safe setup for future integrations using Replit Secrets.
+Do not hard-code private keys in frontend code.
+
+Important:
+If a feature cannot be fully completed in LITE mode, still prepare as much as possible in LITE mode first, such as the UI, data models, placeholder controls, admin layout, TODO comments, mock/test structures, and safe frontend wiring.
+
+Only use full Agent mode after LITE mode is exhausted.
+
+After completing the work, provide:
+1. What was completed in LITE mode.
+2. What required Agent mode.
+3. Files changed.
+4. Any new secrets needed.
+5. Any database/storage setup needed.
+6. What still needs to be connected later.
+7. A testing checklist for customer flow and admin flow.

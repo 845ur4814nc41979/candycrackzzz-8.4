@@ -1,0 +1,110 @@
+Fix the admin notification sounds. The notification bell lights up, but no sound plays.
+
+Do not add new major features. Only debug and fix notification sound behavior.
+
+Current files involved:
+- artifacts/candy-crackzzz/src/components/admin/NotificationBell.tsx
+- artifacts/candy-crackzzz/src/lib/notificationSounds.ts
+- artifacts/candy-crackzzz/src/pages/admin/AdminSettings.tsx
+- artifacts/candy-crackzzz/src/types/index.ts
+- artifacts/candy-crackzzz/src/lib/defaults.ts
+- artifacts/api-server/src/routes/candy.ts
+- artifacts/api-server/src/routes/candy-storage.ts
+
+Problem:
+The notification bell updates and lights up when a new notification arrives, but the order/message/general chime sound is not playing.
+
+Fix requirements:
+
+1. Verify notification sound settings exist and are saved correctly:
+- notificationSoundsEnabled
+- notificationSoundVolume
+- orderSoundEnabled
+- messageSoundEnabled
+- generalSoundEnabled
+- notificationPollingEnabled
+- notificationPollingSeconds
+- notificationBellEnabled
+
+2. Make sure notificationSoundsEnabled can be turned on from Admin Settings and actually persists after refresh.
+
+3. Add a clear visible admin-only prompt near the bell or dashboard when sounds are enabled but browser audio is locked:
+“Click to enable notification sounds.”
+
+Do not hide this only inside the bell dropdown. Make it obvious enough that I can click it.
+
+4. Fix notificationSounds.ts so unlocking audio is reliable.
+
+The current unlock function may be returning true before the AudioContext is actually resumed. Make unlockNotificationAudio async and wait for ctx.resume().
+
+Suggested behavior:
+- unlockNotificationAudio should create or reuse AudioContext.
+- If AudioContext is suspended, await ctx.resume().
+- Play a very tiny silent or low-volume test tone after unlock.
+- Store an in-memory unlocked flag only after resume succeeds.
+- canPlayNotificationAudio should return true only when unlocked is true and the AudioContext is running.
+- playOrderNotificationSound, playMessageNotificationSound, and playGeneralNotificationSound should also try to resume the context if needed.
+
+5. In NotificationBell.tsx, do not silently fail if audio is locked.
+If a new notification arrives and sounds are enabled but audio is locked, show a small admin-only warning:
+“Notification received. Click Enable Sounds to hear future alerts.”
+
+6. Add test buttons in Admin Settings if they are missing:
+- Test Order Sound
+- Test Message Sound
+- Test General Sound
+
+Clicking each test button should first unlock audio, then play the correct sound.
+
+7. Make sure sound mapping is correct:
+- notification.type === "order" plays order chime
+- notification.type === "message" plays message chime
+- all other notification types play general chime
+
+8. Make sure the backend creates the correct notification types:
+- New order notifications must have type: "order"
+- New contact/message notifications must have type: "message"
+- Other notifications can use type: "general" or another type and should play the general sound
+
+9. Make sure sound only plays for truly new notifications after the first admin notification fetch.
+Do not play sounds for old notifications that were already there when the admin page first loaded.
+
+10. Add temporary dev console logging while testing, then remove or keep only harmless debug logs if needed:
+- notification received
+- notification type
+- sound setting enabled true/false
+- audio unlocked true/false
+- selected sound type
+
+11. Test this exact flow:
+- Log into admin.
+- Turn notification sounds on.
+- Click Enable notification sounds.
+- Click Test Order Sound and confirm sound plays.
+- Click Test Message Sound and confirm sound plays.
+- Click Test General Sound and confirm sound plays.
+- Open customer side in another tab.
+- Submit a test order.
+- Confirm bell lights up and order sound plays once.
+- Submit a test contact/message form.
+- Confirm bell lights up and message sound plays once.
+- Mark all read.
+- Confirm bell stops glowing.
+
+12. If sound still cannot play because the browser/device blocks it, show a clear admin message:
+“Your browser blocked sound until you interact with the page. Click Enable notification sounds.”
+
+13. Keep customer pages silent. Sounds are admin-only.
+
+14. Run:
+pnpm run typecheck
+pnpm run build
+
+Report back:
+- what was blocking the sound
+- which files were changed
+- whether test sound buttons work
+- whether order sound works
+- whether message sound works
+- whether general sound works
+- whether typecheck/build passed

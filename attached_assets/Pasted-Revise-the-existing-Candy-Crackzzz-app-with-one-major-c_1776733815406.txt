@@ -1,0 +1,334 @@
+Revise the existing Candy Crackzzz app with one major correction pass.
+
+Keep Candy Crackzzz as the default brand. Do not try to make this app unbranded right now. Keep the current candy-shop visual style, storefront feel, logo direction, bright colors, product cards, menu flow, and overall public look. This is a major revision, not a rebuild from scratch.
+
+Main goals:
+1. Keep Candy Crackzzz as the default brand
+2. Add proper admin protection
+3. Replace the weak login idea with first-run admin setup plus normal admin login
+4. Make the storefront/home page the default landing page
+5. Keep a clear path into admin from both mobile and desktop
+6. Add reviews
+7. Make messages and order inquiries go to real configurable destinations
+8. Fix mobile admin order status controls
+9. Keep payments modular and toggle-based
+10. Add proper logo management inside admin
+11. Make the app feel more real and less like a local demo pretending to be production-ready
+
+Do not overbuild. Do not redesign the whole storefront. Do not add unnecessary features. Focus on the items below.
+
+BRAND / STOREFRONT DIRECTION
+- Keep Candy Crackzzz as the default visible brand
+- Keep the current candy-shop look and feel
+- Keep the logo, colorful storefront, and current public style direction
+- Do not switch to a neutral fallback brand right now
+- Keep the public app visually strong and product-photo friendly
+
+DEFAULT LANDING PAGE
+The app should always open to the storefront/home page by default on both mobile and desktop.
+Do not let the app start on admin by default.
+
+Requirements:
+- default landing page = storefront/home
+- admin should be a separate protected area
+- do not open directly to admin on desktop just because the browser last used /admin
+- storefront should feel like the main face of the app
+
+ADMIN ACCESS / NAVIGATION
+Keep admin accessible, but not as a broken or confusing public feature.
+
+Requirements:
+- on mobile, it is acceptable to keep a visible Admin or Settings entry if it fits the current design
+- on desktop, include a visible but not overly dominant Admin link in the header or top-right area
+- from the storefront, there must always be a clear path back into admin on both mobile and desktop
+- do not trap users on the storefront with no path back to admin
+- admin must become protected, not publicly open
+
+ADMIN PROTECTION
+The admin side cannot remain publicly exposed.
+
+Protect:
+- admin dashboard
+- products management
+- orders management
+- settings
+- branding
+- payments
+- reviews management
+- any other admin-only screens
+
+Do not allow public users to access admin pages directly by URL.
+
+FIRST-RUN ADMIN SETUP
+Replace the old brittle login idea with a first-run admin setup flow.
+
+Requirements:
+- if no admin account exists yet, show a one-time Admin Setup screen
+- on that setup screen, let the owner create:
+  - admin username
+  - admin password
+  - confirm password
+- after the first admin account is created, the public must never see the setup screen again
+- after setup is completed, switch the app into normal admin login mode
+- do not store passwords in plain text
+- keep the storefront public even while admin is protected
+
+NORMAL ADMIN LOGIN
+Once an admin account exists, use a standard admin login flow.
+
+Requirements:
+- username field must be visible plain text
+- password field must be masked
+- only the password field should have a show/hide eye control
+- successful login should take the admin into the admin dashboard
+- add logout
+- keep the flow clean and mobile-friendly
+
+ADMIN ACCOUNT MANAGEMENT
+Inside the protected admin area, add an Account or Security section.
+
+Requirements:
+- allow the current admin to change username
+- allow the current admin to change password
+- require current password before changing credentials
+- require confirm new password
+- keep this simple and practical for one-owner use
+- do not build multi-user role management
+- do not add customer accounts
+
+ERROR HANDLING FOR ADMIN AUTH
+Make admin auth messages clearer.
+
+Requirements:
+- if username/password is wrong, show: "Invalid username or password."
+- if admin setup has not been completed yet, show a setup flow instead of a broken login
+- if the server cannot be reached, show: "Could not reach the server. Please try again."
+- make the login/setup flow easier to understand and test
+
+LOGO MANAGEMENT
+In the protected admin area, add clear logo management.
+
+Requirements:
+- allow the admin to upload a logo image
+- allow the admin to preview the current logo
+- allow the admin to replace the logo
+- allow the admin to remove the logo and fall back to the default Candy Crackzzz logo
+- use the current logo in the storefront header and other branded areas where appropriate
+- keep Candy Crackzzz as the default fallback brand/logo if no custom logo is uploaded
+- make logo management easy to use on mobile and desktop
+
+REVIEWS
+Add customer reviews as a real feature.
+
+Public side:
+- add a place where customers can submit a review
+- add a place where approved reviews can be displayed publicly
+- make reviews fit the Candy Crackzzz storefront style
+
+Admin side:
+- add review management
+- admin should be able to:
+  - approve reviews
+  - hide reviews
+  - delete reviews
+  - optionally mark featured reviews
+
+MESSAGES / CONTACT DESTINATION SETTINGS
+Messages and order inquiries need to go somewhere real.
+
+In admin/settings, add configurable destination fields for:
+- business email address
+- business phone number
+- optional message destination / contact destination
+- order inquiry destination information
+- any customer message destination info needed for the app
+
+Requirements:
+- contact forms, order requests, and inquiry flows should use these settings instead of fake placeholder data
+- replace fake/default contact placeholders with editable real business fields
+- make it obvious in admin where messages/orders are intended to go
+
+ORDERS / ORDER MANAGEMENT
+Keep the order system, but improve it.
+
+Requirements:
+- admin must be able to view incoming order requests clearly
+- each order should show:
+  - customer name
+  - phone
+  - selected items
+  - notes
+  - requested date
+  - pickup or delivery
+  - current status
+  - payment method if relevant
+- improve order usability in admin
+
+MOBILE ADMIN ORDER STATUS FIX
+This is important.
+
+On mobile, in admin/orders, fix the controls so the admin can actually change order status properly.
+
+Status options should work clearly and reliably for:
+- New
+- Pending
+- Confirmed
+- Ready
+- Picked Up
+- Completed
+- Cancelled
+
+Requirements:
+- make status controls easy to tap on mobile
+- make the selected status save correctly
+- show the updated status immediately
+- do not make this desktop-only
+
+PAYMENTS
+Keep the modular payment-method direction and improve it.
+
+Supported payment methods should include:
+- Square
+- Cash App
+- Venmo
+- Zelle
+- QR Code payment
+- Manual invoice
+- Cash at pickup
+
+Behavior rules:
+- payments should be OFF by default
+- Square should be OFF by default
+- the app should work perfectly as an order-request app with all payments off
+- customers should only see payment methods that are enabled
+- disabled payment methods must not appear in the public flow
+
+For each payment method, add or keep admin settings fields such as:
+
+Square:
+- enabled toggle
+- config-ready placeholder section
+- do not require live setup yet
+
+Cash App:
+- enabled toggle
+- Cash App tag field
+- optional instructions
+
+Venmo:
+- enabled toggle
+- Venmo username field
+- optional instructions
+
+Zelle:
+- enabled toggle
+- Zelle email or phone field
+- optional instructions
+
+QR Code payment:
+- enabled toggle
+- QR image upload or placeholder
+- optional instructions
+
+Manual invoice:
+- enabled toggle
+- instructions field
+
+Cash at pickup:
+- enabled toggle
+- instructions field
+
+Top-level payment controls:
+- enable payments overall
+- allow request without payment
+- allow deposit only later
+- allow full payment online later
+- allow manual payment after request
+- payment instructions block
+
+Public payment behavior:
+- if payments are off, no payment step should appear
+- if only certain methods are enabled, only show those
+- if Square is off, do not show Square
+- if payments are off, request-only mode should feel natural
+
+PHOTO / PRODUCT MANAGEMENT
+Keep product photo handling important.
+
+Requirements:
+- preserve upload photo
+- preview photo
+- replace photo
+- remove photo
+- keep product editing easy
+- admin should still be able to manage:
+  - name
+  - category
+  - description
+  - price
+  - availability
+  - featured
+  - seasonal
+  - custom order eligibility
+
+BUSINESS SETTINGS CLEANUP
+Replace fake business defaults with real editable settings.
+
+Keep or improve:
+- business name
+- logo
+- phone
+- email
+- service area
+- social links
+- where messages go
+- payment settings
+- about text
+
+Make settings have more visible effect on the app where reasonable.
+
+BACKEND / REALITY GAP
+Right now the app feels more real than it actually is. Improve that honestly without overbuilding.
+
+Requirements:
+- if a full backend rewrite is too much for this pass, it is acceptable to keep some local/browser storage for demo content
+- but admin setup/login should be real and coherent
+- admin protection should be real
+- settings-driven payment visibility should be real
+- review management should be real within the current app structure
+- message destination settings should be real within the current app structure
+- make the app less misleading about what is live vs what is still a shell
+
+DO NOT
+- do not remove Candy Crackzzz branding
+- do not redesign the storefront from scratch
+- do not add customer accounts
+- do not add subscriptions
+- do not build a huge multi-user auth system
+- do not add unnecessary dashboards
+- do not add order notifications yet
+- do not add browser notifications yet
+- do not add badge counts yet
+- do not make Square required
+- do not leave admin publicly exposed
+
+SUCCESS STATE
+When this revision is done:
+- the app opens to the storefront/home page by default
+- Candy Crackzzz remains the default brand
+- storefront stays colorful and mobile-friendly
+- admin is protected
+- if no admin exists yet, the app shows a one-time admin setup flow
+- once setup is complete, admin uses a normal login flow
+- username is visible, password is masked
+- admin can later change username/password from a protected account/security section
+- admin can upload, preview, replace, and remove the logo from inside admin
+- if no custom logo is uploaded, the app falls back to the default Candy Crackzzz logo
+- desktop and mobile both have a clear path into admin
+- reviews can be submitted and managed
+- message destinations can be configured in admin
+- mobile admin can successfully change order statuses
+- payment methods are modular and toggle-based
+- payments are off by default
+- customers only see enabled payment methods
+- the app feels more like a real business tool and less like a public demo shell

@@ -1,0 +1,107 @@
+Since this is becoming a larger rebuild/overhaul, please also strengthen the foundation of the Candy CrackZZZ app instead of only adding pages.
+
+Do not remove or break existing features. Keep the customer menu, checkout, admin login, payment settings, rewards, messaging, notifications, AI description tools, and merch page work intact.
+
+Add or improve the following foundation features:
+
+1. Persistent data structure
+Make sure candy products, merch products, orders, customers, rewards, uploaded images, payment settings, admin settings, coupons, and site settings persist after refresh and deployment. Do not rely only on localStorage for important production data. If the app currently uses localStorage, keep it only as a temporary fallback and clearly mark what should move to database storage.
+
+2. Customer/order tracking
+Add a customer record system that can store customer name, phone, email, order history, reward points, notes, and favorite/repeat items if available. Customers should be tied to orders and reward balances.
+
+3. Admin order dashboard
+Create an admin Orders section where orders can be viewed and updated. Status options should include:
+Pending
+Confirmed
+Preparing
+Ready for Pickup
+Completed
+Canceled
+Refunded
+
+Each order should show customer info, items ordered, quantities, candy/merch distinction, payment method selected, rewards used if any, pickup/delivery notes, custom notes, order total, and order timestamp.
+
+4. Pickup and scheduling controls
+Add admin controls for pickup/delivery availability:
+Available pickup days
+Pickup time windows
+Minimum prep time
+Same-day order toggle
+Cutoff time
+Closed dates
+Holiday blackout dates
+Custom pickup instructions
+
+Customer checkout should show available pickup options based on admin settings.
+
+5. Food business notices and disclaimers
+Add an admin-editable notices/disclaimers section. These notices should be able to appear on product pages, checkout, and order confirmation. Include fields for:
+Allergen notice
+Freshness/refrigeration notice
+Pickup timing notice
+Custom order notice
+Color/flavor variation notice
+No refund/custom order policy
+Customer responsibility after pickup
+General food safety disclaimer
+
+Use plain customer-friendly wording and allow admin to edit all text.
+
+6. Coupons and promo codes
+Add a promo code system controlled by admin. Support:
+Percentage discount
+Dollar amount discount
+Free item promo
+Candy-only promo
+Merch-only promo
+Minimum order amount
+Expiration date
+Usage limit
+Active/inactive toggle
+Reward bonus promo if rewards are enabled
+
+7. Better product options
+For candy products, support editable options such as fruit type, flavor, color, drizzle, toppings, tray size, quantity, and custom notes.
+For merch products, support editable options such as size, color, quantity, inventory, coming soon, out of stock, limited quantity, and points eligible.
+Keep the product option system flexible so new options can be added later without rewriting the app.
+
+8. Image/media manager
+Add or prepare a centralized media manager for uploaded logos, product photos, merch photos, banners, QR codes, and social media images. Admin should be able to upload or set image URLs and reuse images across products if possible. Use placeholder fallback images when no image is uploaded.
+
+9. Admin activity log
+Add a simple admin activity log that records important changes such as product created/edited/deleted, price changed, inventory changed, order status changed, rewards changed, coupon created, payment setting changed, and merch status changed. This can be basic but should be structured.
+
+10. Export/backup tools
+Add admin export buttons or prepare routes to export:
+Orders
+Customers
+Products
+Merch
+Reward balances
+Coupons
+
+CSV export is fine. The goal is to make sure the business data can be backed up or moved later.
+
+11. Site settings
+Create a general Admin Settings area for business name, logo, contact email, phone number, social links, pickup address/instructions, business hours, announcement banner, homepage message, and maintenance mode toggle.
+
+12. Security and deployment cleanup
+Make sure admin routes are protected.
+Do not expose API keys in frontend code.
+Use Replit Secrets for API keys and tokens.
+Add clear missing-secret warnings instead of app crashes.
+Make sure the app builds cleanly.
+Make sure public customers cannot access admin tools.
+Make sure test/demo data is clearly marked and easy to remove.
+
+13. Mobile-first design
+Make sure the customer menu, merch page, cart, checkout, admin dashboard, product editor, and order dashboard work well on phones.
+
+After finishing, provide:
+1. Summary of what changed.
+2. Files changed.
+3. Any new secrets needed.
+4. Any database/storage setup needed.
+5. What still needs to be connected later.
+6. A testing checklist for customer flow and admin flow.

@@ -1,0 +1,240 @@
+Stop and fix these visible issues only. Do not add unrelated new features.
+
+I did not ask for paid AI, and I do not want anything looking for an API key right now. I also see settings for something like an “Enable infinite scrolling” button and page selections, but I do not see the feature working anywhere in the preview. I need both problems corrected or clearly explained.
+
+Main issues to fix:
+
+1. The “AI-style description generator” is still looking for an API key.
+2. The local Smart Description Generator must work with no OPENAI_API_KEY.
+3. Settings show an “Enable infinite scrolling” option and page choices, but I cannot see where it appears or what it does in preview.
+4. If infinite scrolling was added accidentally or incompletely, either make it visibly work or remove/hide the setting until it is actually implemented.
+5. Do not use more time on unrelated work.
+
+PART A — Fix Smart Description Generator
+
+The description generator must be local/template-based only and must not call OpenAI, Gemini, or any paid API.
+
+It must work with:
+- no OPENAI_API_KEY
+- no Google key
+- no paid API billing
+- no backend AI route
+
+Current likely problem:
+The old AiWriteButton is still being used somewhere and it calls apiGenerateAI, which calls /api/cc/ai/generate and requires OPENAI_API_KEY.
+
+Find and remove/replace all normal product and merch description uses of:
+- AiWriteButton
+- apiGenerateAI
+- /api/cc/ai/generate
+
+Check these files:
+- artifacts/candy-crackzzz/src/components/admin/AiWriteButton.tsx
+- artifacts/candy-crackzzz/src/components/admin/SmartDescriptionButton.tsx
+- artifacts/candy-crackzzz/src/lib/api.ts
+- artifacts/candy-crackzzz/src/lib/smartDescription.ts
+- artifacts/candy-crackzzz/src/pages/admin/AdminMerch.tsx
+- artifacts/candy-crackzzz/src/pages/admin/AdminProductForm.tsx
+- artifacts/api-server/src/routes/candy.ts
+
+Create or verify:
+artifacts/candy-crackzzz/src/lib/smartDescription.ts
+
+It must export local functions only, for example:
+- generateProductDescription(...)
+- generateMerchDescription(...)
+- generateShortDescription(...)
+
+These functions must use templates/rules from:
+- item name
+- product category
+- merch category
+- flavor notes
+- color/theme notes
+- toppings if present
+- sizes
+- colors
+- stock/status
+- featured flag
+- seasonal flag
+- custom eligible flag
+- Candy CrackZZZ tone
+
+No fetch.
+No OpenAI.
+No Gemini.
+No API route.
+No environment variables.
+No backend call.
+No API key.
+No quota error.
+
+Create or verify:
+artifacts/candy-crackzzz/src/components/admin/SmartDescriptionButton.tsx
+
+It should:
+- generate text locally in the browser
+- show the generated draft or apply it to the form only after admin chooses to apply
+- let admin review/edit before saving
+- not auto-save
+- not call apiGenerateAI
+- not show API key errors
+
+Replace the description buttons in:
+- AdminMerch.tsx
+- AdminProductForm.tsx
+
+Button label should be:
+“Generate Smart Description”
+or
+“AI-Style Description”
+
+Do not use the old “Write with AI” button for this local feature.
+
+Keep the old backend /api/cc/ai/generate route only if needed for future optional paid mode, but it must not be used by product/merch description generation right now.
+
+Smart description acceptance test:
+1. Remove or ignore OPENAI_API_KEY.
+2. Open admin merch.
+3. Click Generate Smart Description.
+4. It generates text with no API key.
+5. Open admin product form.
+6. Click Generate Smart Description.
+7. It generates text with no API key.
+8. Browser Network tab shows no request to /api/cc/ai/generate.
+9. No “OPENAI_API_KEY missing” error.
+10. No quota error.
+11. Admin can edit before saving.
+12. Saved description persists after refresh.
+
+PART B — Fix or remove/hide incomplete “infinite scrolling” setting
+
+I see a setting that looks like:
+- enable infinite scrolling
+- what pages it should appear on
+
+But I do not see anything working in preview. I need this handled cleanly.
+
+First, audit what was added:
+Search for:
+- infinite
+- infinite scrolling
+- scroll
+- helperShow
+- floating
+- pages
+- page selections
+- chatbot
+- LocalCandyHelper
+
+Check these likely files:
+- artifacts/candy-crackzzz/src/types/index.ts
+- artifacts/candy-crackzzz/src/lib/defaults.ts
+- artifacts/candy-crackzzz/src/pages/admin/AdminSettings.tsx
+- artifacts/candy-crackzzz/src/components/layout/PageLayout.tsx
+- artifacts/candy-crackzzz/src/App.tsx
+- artifacts/candy-crackzzz/src/components/customer/LocalCandyHelper.tsx
+- artifacts/candy-crackzzz/src/lib/localHelper.ts
+
+Clarify what this setting is supposed to be:
+If this is actually meant to control the local helper/chatbot floating button, rename the setting labels so they make sense:
+- “Enable Candy Helper”
+- “Show floating helper button”
+- “Show helper on Home”
+- “Show helper on Menu”
+- “Show helper on Merch”
+- “Show helper on Cart”
+
+Do not call it “infinite scrolling” unless it truly controls infinite scrolling.
+
+If the setting is for the local Candy Helper:
+Make sure the helper is actually visible in preview.
+
+Acceptance test:
+- Helper is ON by default.
+- A small floating Candy Helper button appears on customer-facing pages where settings allow.
+- It appears at least on:
+  - /
+  - /menu
+  - /merch
+  - /cart
+- Admin Settings can toggle it on/off.
+- Page-specific toggles actually control where it appears.
+- If it is disabled, it disappears.
+- If enabled, it appears without needing refresh if possible, or appears after refresh at minimum.
+
+The helper must be local only:
+- No OpenAI
+- No Gemini
+- No paid API
+- No API key
+- No backend call required for normal helper responses
+
+The helper should only help with Candy CrackZZZ topics:
+- candy flavors
+- fruit flavors
+- candy-dipped fruit
+- candy grapes
+- pineapple
+- party trays
+- seasonal/custom trays
+- merch suggestions
+- rewards/referrals in a general way
+- delivery/pickup basics
+- custom order ideas
+
+If user asks unrelated questions, reply:
+“I can help with Candy CrackZZZ flavors, fruit, candy-dipped treats, merch, rewards, pickup, delivery, or custom order ideas.”
+
+If the setting is not for the helper and was accidentally added:
+- Remove or hide it from Admin Settings for now.
+- Do not leave confusing settings visible that do nothing.
+- Explain what was removed/hidden in the final report.
+
+PART C — Prove the changes are real
+
+Before reporting “done,” show me the actual changed files.
+
+Run:
+git status
+git diff --stat
+
+Then test:
+
+Smart Description:
+1. Admin merch Generate Smart Description works with no OPENAI_API_KEY.
+2. Admin product Generate Smart Description works with no OPENAI_API_KEY.
+3. No network call to /api/cc/ai/generate.
+4. No API key error.
+5. No quota error.
+
+Helper / Setting:
+1. Admin Settings labels are clear and not confusing.
+2. If helper is enabled, helper is visible on customer pages.
+3. If helper is disabled, helper disappears.
+4. Page toggles work.
+5. No “infinite scrolling” wording remains unless there is real infinite scrolling.
+
+Basic app:
+1. / loads.
+2. /menu loads.
+3. /merch loads.
+4. /cart loads.
+5. /admin/login loads.
+6. /admin/settings loads.
+7. /admin/merch loads.
+8. No white screen.
+9. pnpm run typecheck passes.
+10. pnpm run build passes.
+
+Final report must include:
+1. git status summary.
+2. changed file list.
+3. where old AiWriteButton/apiGenerateAI usage was removed or replaced.
+4. confirmation that Smart Description Generator is local only.
+5. confirmation that no /api/cc/ai/generate network call happens.
+6. what the “infinite scrolling” setting actually was.
+7. whether it was renamed, fixed, or removed/hidden.
+8. where the helper appears in preview.
+9. how to turn the helper on/off.
+10. any manual steps I still need to do.

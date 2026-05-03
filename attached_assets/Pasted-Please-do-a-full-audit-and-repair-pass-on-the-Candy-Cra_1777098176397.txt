@@ -1,0 +1,267 @@
+Please do a full audit and repair pass on the Candy CrackZZZ app. Work in LITE mode as much as possible first. Only switch to Agent mode after everything that can reasonably be done in LITE mode has been completed.
+
+Main things I need fixed or added:
+
+1. Test and verify OPENAI_API_KEY is working.
+2. Fix the missing merch/product images that were supposed to be added from images I uploaded in March.
+3. Make merch/product images editable by clicking the image in the admin section and choosing a new picture.
+4. Add or prepare an AI customer helper chatbot for candy-dipped fruit, merch, rewards, points, referrals, and special orders.
+5. Add delivery address distance, drive-time estimate, and directions button logic for customer orders.
+
+Before changing anything:
+Audit the frontend, backend, API routes, database/storage layer, admin pages, customer pages, product/merch pages, image upload logic, checkout/order flow, rewards/points logic, customer login logic, and any existing AI code. Do not break current admin login, products, merch, checkout, settings, rewards, or published deployment.
+
+OPENAI_API_KEY / AI test requirements:
+Add or verify a safe backend route:
+
+GET /api/ai/status
+
+It should return only:
+
+{ configured: true/false }
+
+Never expose the actual API key in frontend code, browser responses, console logs, database, GitHub, or public repo.
+
+Then test:
+- AI description generator
+- AI name suggestion generator
+- Any existing AI routes
+- Whether the backend can actually reach OpenAI using process.env.OPENAI_API_KEY
+
+If there is an error, tell me clearly whether the problem is:
+- missing secret
+- invalid API key
+- billing/credits issue
+- backend route issue
+- frontend route issue
+- OpenAI API response issue
+- deployment secret issue
+
+If OPENAI_API_KEY is missing or not working, the app should not crash. Show a clean admin-only setup warning instead of a red customer-facing error.
+
+Merch/product image problem:
+I previously uploaded pictures in March that were supposed to be included in the store/merch area, but they are not showing up. Search the project for any uploaded images or orphaned assets that may already exist but are not connected to products or merch.
+
+Look in places like:
+- public
+- public/assets
+- public/uploads
+- src/assets
+- app assets
+- seed data
+- database records
+- any existing upload folders
+- any image references that are broken or unused
+
+If the images exist in the project:
+- Connect them to the correct merch/products.
+- Update the seed data or database records so the images show on the customer-facing store.
+- Make sure the images persist after refresh and in the published app.
+- Remove or avoid blank placeholders where real images exist.
+
+If the images do not exist in the current project files:
+- Add a clear admin notice saying those images are missing and need to be re-uploaded.
+- Make the upload flow easy so I can click the product/merch image and add the correct picture.
+
+Admin image upload/editing requirements:
+In the admin section, I want to be able to click directly on the product or merch image/photo area and change it.
+
+Requirements:
+- Clicking the image area opens a file picker.
+- Admin can choose a new image.
+- Image previews immediately before saving.
+- Save button stores the image permanently.
+- The saved image persists after refresh.
+- The saved image appears in the published app.
+- Customer pages show the image but do not show admin controls.
+- If possible, support drag-and-drop image upload too.
+- Add a small “Replace Image” or “Change Photo” label when hovering over the admin image area.
+- Add validation for image file type and reasonable file size.
+- Do not break existing product editing.
+
+Apply this to:
+- candy products
+- candy-dipped fruit
+- merch
+- bundles or party trays if they exist
+
+AI description/name generator:
+Make sure candy and merch admin pages have:
+- Generate Description
+- Suggest Product Names
+- Apply Description
+- Use This Name
+
+The AI description should use:
+- product name
+- category
+- flavors
+- toppings
+- price if available
+- image information if available
+- product type, candy/fruit/merch/bundle
+- Candy CrackZZZ style: fun, colorful, premium, catchy, but not too cheesy
+
+Do not auto-save AI-generated text. Let admin review, edit, and save.
+
+AI customer helper chatbot:
+I want to add a chatbot that can help customers choose candy-dipped fruit, candy, merch, party trays, bundles, and special orders.
+
+The chatbot should be available on the home screen or as a floating helper, but it must be controlled by admin settings.
+
+Admin chatbot controls:
+Add an admin settings section for:
+- chatbot enabled/disabled
+- where it appears: home page only, product pages, checkout, floating button, or all pages
+- greeting message
+- brand tone
+- max number of product recommendations
+- whether chatbot can suggest merch
+- whether chatbot can suggest rewards/points
+- whether chatbot can suggest referral rewards
+- whether chatbot can help with special order ideas
+- whether chat logs are saved
+- optional editable chatbot instructions
+- allergy disclaimer text
+- out-of-stock behavior
+- fallback message if AI is not configured
+
+Customer chatbot behavior:
+The chatbot should help customers based on:
+- favorite flavors
+- sweet/sour preference
+- spicy preference
+- chocolate preference
+- fruit preference
+- candy type preference
+- merch interest
+- budget
+- party/event size
+- special order design ideas
+- previous items they liked
+- allergies or ingredients they need to avoid
+
+Very important chatbot rules:
+- Only recommend real active products from the current app data.
+- Prioritize in-stock products.
+- Do not invent products, prices, rewards, points, discounts, or availability.
+- Do not make medical claims.
+- Do not complete payment inside the chat.
+- Customer must still go through normal checkout.
+- If cart functions exist, chatbot can offer “Add to Cart” buttons.
+- If cart functions do not exist, chatbot should link to the product.
+- Include a short allergy disclaimer when food is involved.
+- If a customer asks for a special order, the chatbot can help brainstorm using available flavors/products, but should label it as a request that still needs admin approval.
+
+Phone login / rewards / points inside chatbot:
+Customers may be able to log into the chatbot using their phone number. If the app already has customer accounts or phone login, connect the chatbot to that existing system.
+
+Important security requirement:
+Do not show customer points, order history, or personal info just because someone types a phone number. If phone login is used, require proper verification, such as an OTP/text code, or use the existing secure customer login system.
+
+Once a customer is verified/logged in, the chatbot should be able to say things like:
+- “You have ___ points available.”
+- “You could use points toward this merch item if rewards are enabled for it.”
+- “You are ___ points away from your next reward.”
+- “You can earn extra points by referring friends.”
+- “This item is eligible for rewards.”
+- “This merch item allows points to be used up to the admin-set amount.”
+
+Rewards chatbot rules:
+- Pull points from the actual rewards/customer data.
+- Do not invent point balances.
+- Do not invent rewards rules.
+- Follow admin settings for whether points can be used on candy, fruit, merch, bundles, or special orders.
+- If referral rewards are enabled, explain how the customer can refer friends.
+- If referral rewards are not enabled, do not mention them as active.
+
+Non-AI fallback:
+If OPENAI_API_KEY is missing or fails, the chatbot should still have a basic non-AI helper mode that uses tags, categories, flavors, stock status, and rewards settings to make simple recommendations.
+
+Delivery distance, ETA, and directions button:
+When the customer selects delivery and enters their delivery address, I want the order to show:
+- distance from the store/business location
+- estimated drive time
+- directions button
+- delivery-time traffic estimate when a scheduled delivery time exists
+
+Requirements:
+- Add a directions button on the customer order and admin order view.
+- The button should open directions from the business/store address to the customer delivery address.
+- Show distance in miles.
+- Show estimated drive time in minutes.
+- If the order has a scheduled delivery time, calculate the estimate for the traffic at the scheduled delivery time, not just the time the order was placed.
+- If there is no scheduled delivery time, use the current/soonest drive-time estimate.
+- Do not expose any maps API key in the frontend.
+- Put maps API calls on the backend if an API key is required.
+- Add admin settings for the business/store address.
+- Add admin settings for delivery radius rules if not already there.
+- If maps API is not configured, show a clean warning in admin and do not crash checkout.
+- If possible, add a fallback that shows a directions link even if the mileage/ETA cannot be calculated.
+
+Possible future secret:
+If a map provider is needed, prepare the app for a server-side secret such as:
+
+GOOGLE_MAPS_API_KEY
+
+But do not hard-code it and do not expose it publicly.
+
+Delivery admin controls:
+Add or verify admin settings for:
+- delivery enabled/disabled
+- pickup enabled/disabled
+- store/business address
+- max delivery radius
+- delivery fee rules if already supported
+- maps/directions enabled/disabled
+- whether customers can schedule delivery time
+- whether ETA is shown to customers
+- whether ETA is shown only to admin
+
+Testing requirements:
+Test everything before reporting back.
+
+Test AI:
+1. /api/ai/status returns configured true/false.
+2. AI works if OPENAI_API_KEY is valid.
+3. Missing AI key shows clean admin warning, not red customer-facing error.
+4. API key is never exposed.
+
+Test images:
+1. Existing March images are searched for.
+2. Any found images are connected to merch/products.
+3. Admin can click image area and upload/replace image.
+4. Preview works before saving.
+5. Image persists after refresh.
+6. Customer store shows saved images.
+7. Published app shows saved images.
+
+Test chatbot:
+1. Admin can toggle chatbot on/off.
+2. Chatbot only recommends real active/in-stock products.
+3. Chatbot does not invent prices, products, rewards, or point balances.
+4. Logged-in/verified customer can see accurate points if rewards data exists.
+5. Unverified customer cannot see private points or order history.
+6. Chatbot can suggest flavors and special order ideas while still requiring admin approval for custom orders.
+
+Test delivery:
+1. Delivery address can be entered.
+2. Directions button appears.
+3. Distance appears when maps API is configured.
+4. ETA appears when maps API is configured.
+5. Scheduled delivery uses scheduled-time traffic estimate if supported.
+6. Missing maps API does not crash the app.
+7. Directions fallback still works if exact ETA is unavailable.
+
+At the end, give me a report with:
+- what was broken
+- what was fixed
+- what files were changed
+- whether OPENAI_API_KEY is working
+- where I click to change product/merch images
+- whether the March images were found or need to be re-uploaded
+- where chatbot settings are located
+- what the chatbot can currently do
+- what still needs manual setup from me
+- what secrets are needed now or later
+- how delivery directions, distance, and ETA are wired

@@ -1,0 +1,277 @@
+Add an interactive Demo Mode / Guided Walkthrough system for Candy CrackZZZ.
+
+Goal:
+When someone logs in for the first time, the app should offer a guided demo mode that walks them through the features they have access to. This is mainly for the admin section, but there should also be a customer-side demo showing how ordering, rewards, referrals, review photos, and the order helper work.
+
+Important:
+Do not break the existing app.
+Do not overwrite real products, merch, orders, rewards profiles, reviews, settings, or admin users.
+Do not create fake live orders unless clearly marked as demo/test data.
+Do not send real notifications, SMS, emails, push notifications, or customer messages from demo mode.
+Demo mode must be safe and clearly labeled.
+
+Main concept:
+Create a guided onboarding system that detects the logged-in user’s role and only shows the walkthroughs for features they are allowed to use.
+
+User roles to support:
+- Builder
+- Site Admin
+- System Admin
+- Campaign / Rewards Admin
+- Staff
+- Delivery Driver
+- Viewer
+- Customer / Rewards Member
+
+Demo Mode entry points:
+1. First login prompt:
+When a user logs in for the first time, show a friendly prompt:
+“Would you like a quick guided tour of your dashboard?”
+
+Buttons:
+- Start Demo
+- Skip for Now
+- Don’t Show Again
+
+2. Admin dashboard button:
+Add a button on the admin dashboard:
+“Start Guided Demo”
+
+3. Help menu:
+Add a small Help / Demo / Tour button in the admin layout.
+
+4. Customer side:
+Add optional “How It Works” or “Try Demo” links for rewards, referral, checkout, and order helper.
+
+Demo mode behavior:
+- Use tooltips, highlighted areas, and next/back steps.
+- Show one feature at a time.
+- Do not overload the screen.
+- Allow Skip, Back, Next, and Finish.
+- Save whether each user has completed or skipped the demo.
+- Let users replay the demo later.
+- Make the demo mobile-friendly.
+
+Create a reusable guided tour component:
+artifacts/candy-crackzzz/src/components/demo/GuidedTour.tsx
+
+Create tour definitions:
+artifacts/candy-crackzzz/src/lib/demoTours.ts
+
+Create demo state helper:
+artifacts/candy-crackzzz/src/lib/demoMode.ts
+
+Demo state should track:
+- hasSeenAdminTour
+- hasSeenRewardsTour
+- hasSeenCheckoutTour
+- hasSeenDeliveryTour
+- dismissedDemoPrompt
+- lastDemoCompletedAt
+- demoModeEnabled
+
+This can be stored per admin user where possible. If not available yet, use localStorage temporarily.
+
+Admin Builder tour:
+The Builder tour should show:
+1. Dashboard overview.
+2. Notification bell.
+3. Orders area.
+4. Messages area.
+5. Products: how to add/edit products.
+6. Product image: how to click image to replace it.
+7. Merch: how to add/edit merch.
+8. Smart Description Generator.
+9. Rewards setup.
+10. Referral settings.
+11. Campaigns.
+12. Reviews and customer photo reviews.
+13. Team page: create staff/admin/driver logins.
+14. Delivery driver role.
+15. Settings.
+16. System/API readiness.
+17. Analytics / view counter.
+18. Backup/export if available.
+
+Site Admin tour:
+Only show features the Site Admin can access:
+1. Dashboard basics.
+2. Products.
+3. Merch.
+4. Branding.
+5. Payments.
+6. Pickup/delivery settings.
+7. Public site settings.
+8. Smart descriptions.
+9. Review moderation if allowed.
+
+System Admin tour:
+Only show system/technical features:
+1. Health/status panel.
+2. API readiness.
+3. Notification settings.
+4. Analytics settings.
+5. Backup/export.
+6. Push/SMS/email readiness if present.
+7. Reminder that secrets are configured through Replit Secrets and should not be exposed in the app.
+
+Campaign / Rewards Admin tour:
+Show:
+1. Rewards dashboard.
+2. Rewards members.
+3. Point balances.
+4. Manual point adjustments.
+5. Referral campaigns.
+6. Birthday rewards.
+7. Holiday campaigns.
+8. Promo campaigns.
+9. How customer rewards signup works.
+10. How rewards are applied at checkout.
+11. How referral links work.
+
+Staff tour:
+Show:
+1. Orders.
+2. Order statuses.
+3. Messages.
+4. Notifications.
+5. What staff can and cannot edit.
+
+Delivery Driver tour:
+Show:
+1. Delivery orders.
+2. Delivery address.
+3. Directions button.
+4. Status updates:
+   - out for delivery
+   - delivered
+   - delivery issue
+5. Delivery notes.
+6. What drivers cannot access.
+
+Viewer tour:
+Show:
+1. Dashboard.
+2. Read-only products.
+3. Read-only orders.
+4. Read-only rewards/campaigns if allowed.
+5. Analytics if allowed.
+6. Explain viewer cannot edit.
+
+Customer demo:
+Add a customer-facing demo or “How It Works” guide for:
+1. Browse menu.
+2. Add items to cart.
+3. Use Order Helper.
+4. Join rewards.
+5. Check rewards.
+6. Share referral link.
+7. Apply rewards at checkout.
+8. Submit review with photo after purchase.
+9. Pickup/delivery basics.
+
+Rewards demo:
+Show how rewards work without creating fake live rewards unless the user chooses demo data.
+
+Explain:
+- Join Rewards with phone number.
+- Earn points on orders.
+- Use referral link.
+- Apply points at checkout if enough points are available.
+- Rewards may be pending until order is completed.
+
+Review photo demo:
+Show:
+- Customer takes or uploads a photo.
+- Customer submits review.
+- Admin approves review.
+- Approved review appears publicly.
+
+Image edit demo:
+In admin product/merch edit pages, show:
+- Click the image box.
+- Choose photo from storage or camera.
+- Preview image.
+- Save item.
+- Customer page updates.
+
+Smart description demo:
+Show:
+- Enter product name/flavor.
+- Click Generate Smart Description.
+- Review/edit text.
+- Save.
+- Explain local smart descriptions work now and OpenAI can improve them later when API key is added.
+
+API future-readiness demo:
+Show a short explanation:
+- Local helper works now without OpenAI.
+- Free directions link works now without Google API.
+- Browser/local notifications work now.
+- SMS/email/push can be connected later.
+- API keys should be stored in Replit Secrets.
+- The app should only show configured/missing status, never the actual keys.
+
+Demo data option:
+Add optional “Load Sample Demo Data” button for Builder only.
+
+If used:
+- Add clearly labeled demo products/orders/reviews/rewards.
+- Prefix demo items with “Demo”.
+- Do not mix them with real data without labels.
+- Add “Clear Demo Data” button.
+- Do not delete real data when clearing demo data.
+
+Safety:
+- Demo mode must never send real SMS/email/push.
+- Demo mode must never charge money.
+- Demo mode must never expose private customer data.
+- Demo mode must never reveal API keys or secrets.
+- Demo mode must not lock anyone out.
+
+UI requirements:
+- Clean Candy CrackZZZ style.
+- Mobile-friendly.
+- Use highlighted boxes, arrows, or tooltip-style cards.
+- Keep text short.
+- Use plain language.
+- Include progress like “Step 3 of 10.”
+- Include Skip and Finish buttons.
+
+Testing:
+1. New Builder login sees demo prompt.
+2. Builder can start, skip, finish, and replay demo.
+3. Site Admin only sees allowed walkthrough steps.
+4. Campaign Admin sees rewards/campaign walkthrough.
+5. Staff cannot see settings/team walkthrough steps.
+6. Delivery Driver sees delivery walkthrough only.
+7. Customer demo works from public side.
+8. Demo mode does not create real orders unless explicitly using labeled demo data.
+9. Clear Demo Data removes only demo-labeled data.
+10. App still works with no OpenAI key.
+11. App still works with no Google Maps API key.
+12. App still works with no SMS/email API keys.
+13. No white screen.
+14. No console errors.
+15. Frontend build passes.
+16. API build passes.
+
+Build:
+Run:
+pnpm --filter @workspace/candy-crackzzz run build
+pnpm --filter @workspace/api-server run build
+
+Final report:
+Explain:
+1. Where Demo Mode was added.
+2. How first-login demo prompt works.
+3. How each role gets a different walkthrough.
+4. How customer demo works.
+5. How rewards demo works.
+6. How review photo demo works.
+7. How image edit demo works.
+8. Whether sample demo data was added.
+9. How demo data is cleared safely.
+10. What files changed.
+11. What tests were run.
+12. Whether builds passed.

@@ -1,0 +1,50 @@
+Yes, fix the Replit workflow/port configuration, but be careful not to break the API.
+
+Goal:
+Only the main Project workflow should run the app on fresh import.
+
+Correct setup:
+- API server should run on port 3001.
+- Frontend/Vite preview should run on port 5000.
+- Project workflow should call bash scripts/replit-start.sh and wait for port 5000.
+- Do not run separate API Server workflow at the same time.
+- Do not run separate Start Application workflow at the same time.
+- Avoid shared PORT confusion.
+
+Please update .replit and scripts/replit-start.sh so the startup is clear and fresh-import safe.
+
+Important:
+Do not simply set PORT=5000 globally if the backend uses process.env.PORT, because that may cause the API to start on 5000 instead of 3001.
+
+Preferred fix:
+1. Use API_PORT=3001 for the backend.
+2. Use FRONTEND_PORT=5000 for Vite.
+3. In scripts/replit-start.sh, start the API with PORT=3001/API_PORT=3001 scoped only to the API command.
+4. Start the frontend with Vite explicitly on port 5000.
+5. Make the Project workflow the only workflow needed for preview.
+6. If other workflows remain in .replit, make sure they are not automatically started or clearly label them as optional/manual.
+7. Stop existing processes before starting to avoid EADDRINUSE.
+
+Expected startup:
+- API listens on 3001.
+- Frontend listens on 5000.
+- Replit preview opens port 5000.
+- /api/cc/bootstrap works through the frontend proxy.
+- No white screen.
+- No port conflict.
+
+After fixing, run:
+pnpm install
+bash scripts/replit-start.sh
+
+Then verify:
+curl -i http://127.0.0.1:3001/api/cc/bootstrap | head -40
+curl -i http://127.0.0.1:5000/api/cc/bootstrap | head -40
+curl -i http://127.0.0.1:5000/ | head -40
+
+Also run:
+pnpm --filter @workspace/candy-crackzzz run build
+pnpm --filter @workspace/api-server run build
+
+Final report:
+Explain exactly what caused the port conflict, what was changed in .replit, what was changed in scripts/replit-start.sh, which workflow should be used, and whether the app preview works on port 5000.

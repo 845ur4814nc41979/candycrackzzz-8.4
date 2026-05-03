@@ -1,0 +1,166 @@
+Focus only on the simple no-paid-API version for now.
+
+Main priorities:
+1. Add simple delivery directions with no Google Maps API key.
+2. Add the merch shop images I already gave/uploaded to the project.
+3. Let me click product/merch images in admin and replace them from device storage, camera, or uploaded files.
+4. Add AI-style product descriptions without relying on OpenAI API or any paid API.
+
+Do not require OPENAI_API_KEY.
+Do not require GOOGLE_MAPS_API_KEY.
+Do not show red API errors to customers or admin.
+Do not break admin login, products, merch, checkout, rewards, or existing store pages.
+
+Simple delivery directions:
+Add a Directions button for delivery orders.
+When a customer selects delivery and enters an address, the order should show a Directions button.
+The button should open Google Maps using a normal free Google Maps URL from the store/business address to the customer delivery address.
+This must work without a Google Maps API key.
+Do not calculate live mileage, drive time, or traffic ETA right now.
+If mileage/ETA fields already exist, hide them or show “Live ETA not enabled.”
+Checkout should still work even with no maps API key.
+
+Admin delivery settings:
+Add or verify a store/business address setting.
+Use that address as the starting point for the Google Maps directions link.
+The customer delivery address should be the destination.
+Add the Directions button on admin order view and customer order/confirmation view if appropriate.
+
+Merch images:
+I previously uploaded/gave images for the merch shop, but they are not showing in the app.
+Search the project for existing image assets that may not be connected to merch products.
+
+Look in:
+- public
+- public/assets
+- public/uploads
+- src/assets
+- app assets
+- seed data
+- database records
+- upload folders
+- unused/orphaned image references
+
+If the images exist:
+- Connect them to the correct merch items.
+- Update seed data or database records so the merch shop shows the real images.
+- Make sure the images appear on the customer-facing merch page.
+- Make sure images persist after refresh and in the published app.
+
+If the images do not exist:
+- Add a clear admin note saying the merch images need to be re-uploaded.
+- Make the upload/replace flow easy.
+
+Click-to-replace images:
+In the admin section, I want to click directly on the image/photo area for any product or merch item and replace it.
+
+Requirements:
+- Clicking the image opens a file picker.
+- It should allow choosing an image from device storage.
+- On mobile, it should allow camera/photo library options where the browser/device supports it.
+- Accept image files only.
+- Preview the new image immediately before saving.
+- Save should permanently store the new image.
+- Image must persist after refresh.
+- Customer-facing store should show the saved image.
+- Customers should not see admin controls.
+- Add a small hover/tap label like “Change Image” or “Replace Photo.”
+- Support this for candy products, candy-dipped fruit, merch, bundles, and party trays if those exist.
+- Do not break existing product editing.
+
+AI-style descriptions without paid API:
+Do not call OpenAI or any paid AI API.
+
+Instead, create a local smart description generator that runs inside the app using templates, product fields, flavor tags, category, and brand tone.
+
+Admin should have a button:
+“Generate Description”
+
+When clicked, it should create a catchy Candy CrackZZZ-style description from:
+- product name/title
+- product category
+- flavors
+- toppings
+- tags
+- merch type if it is merch
+- stock/status if useful
+- seasonal/featured/customizable badges if useful
+
+Description tone:
+- fun
+- colorful
+- premium
+- catchy
+- not too cheesy
+- short enough for a product card
+- customer-facing
+- no fake claims
+- no invented ingredients
+- no invented discounts
+- no invented rewards
+- no medical claims
+
+Important:
+Do not auto-save the generated description.
+Let admin review, edit, and then save it.
+
+Add a button:
+“Regenerate Description”
+
+Optional:
+Add a few tone choices in admin:
+- Fun
+- Premium
+- Short
+- Party/Event
+- Kid-friendly
+- Luxury/Sparkly
+
+For merch, the local generator should make descriptions based on the merch name/type, color/style if available, and Candy CrackZZZ branding.
+
+Examples:
+If product name is “Blue Raspberry Grapes” and tags are sour, fruity, crunchy, blue raspberry, the local generator might create:
+“Crunchy candy-coated grapes with a bold blue raspberry kick, made for anyone who loves a sweet, fruity pop with a little sour attitude.”
+
+If merch item is a sparkly tumbler, the local generator might create:
+“Show off your Candy CrackZZZ style with a sparkly tumbler made for sweet sips, bold looks, and everyday flexing.”
+
+Do not call this real AI in code if it is not using an AI model. Label it in the app as:
+“Smart Description Generator”
+or
+“AI-Style Description Generator”
+
+Error handling:
+Remove scary red API error popups.
+If paid AI is unavailable, do not show an error.
+The app should simply use the local description generator.
+
+Testing:
+Test with no OPENAI_API_KEY.
+Test with no GOOGLE_MAPS_API_KEY.
+
+Confirm:
+1. App loads normally.
+2. Admin product editing works.
+3. Admin merch editing works.
+4. Click-to-replace images works.
+5. Image preview works before saving.
+6. Images persist after refresh.
+7. Customer-facing merch shop shows the correct images.
+8. Existing merch images were found and connected, or admin gets a clear re-upload notice.
+9. Generate Description works without OpenAI API.
+10. Generated descriptions do not invent ingredients, discounts, rewards, or prices.
+11. Delivery Directions button works without Google API.
+12. Checkout does not crash without maps API.
+13. No red paid-API errors appear.
+
+At the end, give me a report with:
+- what was fixed
+- whether the old merch images were found
+- where the merch images were connected
+- where I click to replace images
+- how the image upload is stored
+- how the no-API directions button works
+- where the store/business address is set
+- how the smart description generator works
+- what still needs manual setup from me

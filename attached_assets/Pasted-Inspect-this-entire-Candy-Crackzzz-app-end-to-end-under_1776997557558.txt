@@ -1,0 +1,78 @@
+Inspect this entire Candy Crackzzz app end to end, understand every function, fix whatever is preventing it from loading/running correctly in Replit, and get it fully up and running in Preview and Publish. Do not make random cosmetic changes first. Start by diagnosing startup, routing, build, preview, and auth. Then stabilize the app. After that, verify the storefront, checkout, admin, messaging, rewards, referrals, and mobile behavior. I want a working build, not just code changes.
+
+This is a Candy Crackzzz candy-dipped fruit storefront and admin app. It needs to function as a customer-facing ordering site plus an owner/admin back office. The customer side includes a home page, menu, product details, cart, checkout, gallery, seasonal items, custom orders, contact page, rewards page, and order success page. The admin side includes login, dashboard, orders, products, product form, settings, branding, payments, reviews, and account management. There is also role-based admin access for owner and employee where appropriate.
+
+The storefront must support products with images, pricing or price-hidden mode, featured items, seasonal items, custom-order-eligible items, visibility toggles, sold-out states, and categories like candy grapes, pineapple, party trays, seasonal, and custom. The customer should be able to browse the menu, open a product detail page, add items to cart, view cart contents, and complete a checkout form with contact info, requested date/time, pickup or delivery, delivery address, event type, notes, special instructions, and payment method when enabled.
+
+Payments are controlled by settings toggles. The app supports manual invoice, cash at pickup, Stripe link, Square, PayPal, Cash App, Venmo, Zelle, QR code, and general payment instructions. Payment options shown to the customer should only appear when enabled in settings. Pickup and delivery also need to respect settings toggles and delivery fee rules.
+
+Messaging and notifications are part of the app. Order submission should send order notifications through the existing notification pathway and gracefully handle failure. The app already has business contact destinations and order notification destinations in settings. Preserve and repair that logic instead of replacing it with fake placeholders. Contact forms and order messaging should not silently fail. If notifications are not configured, show a grounded error to the user and do not pretend the order was submitted successfully.
+
+The rewards system is a core feature. Customers can opt into rewards and promo texts during checkout. Rewards profiles are tied to the customer’s phone number. The app supports rewards points per dollar, completed-order awards, tier thresholds, discount tiers, first-order bonuses, birthday bonuses, spend-threshold bonuses, and promo-text opt-in. The rewards page is a customer lookup/login area using phone number lookup, not a full password account system. It must let a customer look up their rewards profile by phone number, see current points, lifetime earned points, referral points, successful referrals, next reward progress, referral code, referred-by code if present, recent order history, recent rewards history, pending points for eligible open orders, and recent referral bonus activity. The rewards page should have copy buttons for the referral code and share text, and those copy actions should show a toast. Keep the rewards page customer-friendly and mobile-friendly.
+
+Referrals are also a core feature. A customer can use a referral code during checkout. Reward profiles have their own referral code and can track referred-by code, successful referral count, and lifetime referral points earned. On an eligible first completed referred order, the referred customer and the referrer can each receive bonus points according to settings. Orders should store referral-related fields such as referral code used, referral bonuses awarded, and referral award timestamp. Admin orders should visibly show referral status, including whether a referral was used and whether a referral bonus was awarded.
+
+The admin dashboard should act as a mission-control overview. It should show active orders, new requests, total products, revenue, store status, and a rewards/referrals summary card. That rewards/referrals summary card should show number of rewards profiles, number of referral orders, total referral points, and whether rewards and referrals are enabled.
+
+The admin orders screen should let the owner/admin view order cards, expand order details, see customer info, logistics, items, notes, payment status, reward awards, referral usage, referral bonuses, and update order status. When an eligible order is marked completed, reward points and referral bonuses should be awarded correctly and only once. Do not double-award rewards if the order status is toggled around. Make sure admin order cards visibly show badges like no referral, referral used, and referral bonus awarded.
+
+The checkout page should clearly communicate rewards state. If the phone number matches an existing rewards profile, show a message that the rewards account was found and estimate points for this order. If no profile is found yet, show that a new rewards account will be created after submission. Keep the referral code field on checkout. If the customer already has a rewards account, show their referral code in checkout too.
+
+The order success page should confirm the order request, preserve the intended Candy Crackzzz tone, and include a clear “Go to Rewards” button when rewards are enabled, plus the usual navigation buttons.
+
+Important auth requirements:
+1. Remove the broken first-run admin setup experience as the primary path.
+2. Implement a preset temporary owner/admin login that works immediately after first launch/import.
+3. This preset login should be seeded one time and should not require the user to create the first admin manually through a setup screen.
+4. The seeded owner/admin account should either come from environment variables with safe defaults for development or from a simple seed routine, but it must be present automatically on first boot.
+5. Force a password change on first successful login for that seeded owner/admin account, or at minimum flag it clearly as temporary and easy to change from the admin account area.
+6. Do not leave the app stuck on a broken admin setup page.
+7. The app should support persistent login/session behavior and should not randomly forget the admin between page refreshes unless intentionally logged out.
+
+Use a temporary preset owner account for development so the app can be tested right away. Set something obvious and easy to replace, for example:
+username: owner
+password: CandyCrackzzzTemp1!
+Then make the app force or strongly prompt a password change after the first successful login. If there is already a better secure pattern in the codebase, use it, but make sure the result is immediate, testable, and not dependent on a broken setup flow.
+
+Critical Replit/runtime requirements:
+1. Inspect why the app is not loading in Preview or after GitHub import.
+2. Repair any missing or broken Replit startup configuration.
+3. Restore or recreate a minimal .replit file if needed so Replit knows how to run the correct app, port, and preview target.
+4. Make sure the app runs on port 3000 in Replit.
+5. Ensure pnpm install, pnpm dev, and pnpm build work from the correct project location.
+6. Ensure Vite preview/build works without needing manual PORT hacks each time.
+7. Fix any broken imports, route targets, or page swaps introduced during prior edits.
+8. Verify the current routing targets for OrderSuccessRewards, RewardsPagePlus, AdminOrdersReferralBadges, and any other replacement pages are valid and actually compile.
+9. If duplicate page variants or confusing route swaps are causing load issues, consolidate them cleanly.
+10. Do not leave dead page variants imported if they are no longer needed.
+
+I want you to inspect the app in this order:
+First, inspect startup configuration, run commands, package scripts, build config, Vite config, Replit config, port usage, and preview behavior.
+Second, inspect App.tsx and all imported pages to make sure every current import exists and compiles.
+Third, inspect auth/bootstrap/session logic and fix the seeded admin flow.
+Fourth, inspect storefront, checkout, notifications, rewards, referrals, and admin orders logic.
+Fifth, test both desktop and mobile layout basics, especially navigation and rewards access.
+
+Then implement only the changes needed to make it stable and working. After changes, verify all of the following:
+- app loads in Replit Preview
+- app builds successfully
+- storefront routes render
+- checkout renders and submits through the expected path
+- rewards page renders
+- order success page renders
+- admin login works with the preset owner credentials
+- admin dashboard renders
+- admin orders render
+- referral badges render
+- rewards/referrals summary card renders
+- no broken imports remain
+- no broken first-time setup loop remains
+
+Finally, give me a concise report with:
+1. root cause(s) you found
+2. files changed
+3. what you fixed
+4. exact preset login credentials
+5. anything still needing manual configuration, if any
+
+Do not stop at a partial diagnosis. Make the app runnable and testable.

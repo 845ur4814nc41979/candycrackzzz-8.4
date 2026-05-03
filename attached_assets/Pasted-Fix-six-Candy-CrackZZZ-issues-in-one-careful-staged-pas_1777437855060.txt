@@ -1,0 +1,679 @@
+Fix six Candy CrackZZZ issues in one careful staged pass:
+
+1. Demo / Guided Tour layout is too low on iPhone/mobile and only half-readable.
+2. Referral points are not transferring correctly to the referrer and referred customer after signup and completed purchase.
+3. Delivery Driver admin flow needs to feel more like a mobile delivery app.
+4. Admin dashboard needs revenue cards, including all-time revenue.
+5. Visible app labels should use Candy CrackZZZ-style wording, like Rewards → Rewardzzz and Settings → Settingzzz/Settingz.
+6. Add toggleable storefront sections for Donutzzz and Dirty Sodazzz with sample products/images and the same storefront features as candy-dipped fruit.
+
+Do not add unrelated features.
+Do not redesign the entire app.
+Do not break checkout, rewards, admin, team roles, products, merch, reviews, notifications, helper, startup, or current no-paid-API behavior.
+Work in stages and test after each stage.
+If any stage causes a white screen or console error, stop and fix that before continuing.
+Keep the app working without OpenAI, Google Maps API, SMS API, email API, or paid APIs.
+Do not expose secrets, API keys, password hashes, or private customer data.
+
+STAGE 1 — Fix Guided Demo / Tour Mode mobile layout
+
+Problem:
+When taking the tour in demo mode on iPhone/mobile, the tour card stays too low on the screen and only about half of the text is readable. The buttons and content can be cut off by the bottom of the screen or iPhone home bar.
+
+Files likely involved:
+- artifacts/candy-crackzzz/src/components/demo/GuidedTour.tsx
+- artifacts/candy-crackzzz/src/lib/demoTours.ts
+- any demo/tour CSS or components used by CustomerDemoLink or Admin demo mode
+
+Fix requirements:
+1. On mobile screens, the tour card should not be stuck at the bottom where it gets cut off.
+2. On screens under 768px wide, show the tour card as a fixed readable mobile modal/card instead of a low tooltip.
+3. Use 100dvh instead of 100vh where possible so mobile browser bars do not cut off the card.
+4. Use iPhone safe-area padding:
+   - padding-top: env(safe-area-inset-top)
+   - padding-bottom: env(safe-area-inset-bottom)
+5. The mobile tour card should have:
+   - position: fixed
+   - left/right mobile margin
+   - top safe padding
+   - bottom safe padding
+   - max-height: calc(100dvh - safe padding)
+   - overflow-y: auto
+6. The Next, Back, Skip, and Finish buttons must always be visible or reachable.
+7. If helpful, make the button row sticky at the bottom inside the tour card.
+8. The card text must wrap normally and not overflow.
+9. If a tour step points to an element near the bottom of the screen, the tooltip should still stay readable and not run off screen.
+10. On mobile, it is okay to ignore exact element anchoring and show the step as a readable centered modal.
+11. On desktop, keep the existing tooltip/highlight behavior if it works.
+
+Suggested mobile layout:
+position: fixed;
+left: 12px;
+right: 12px;
+top: max(16px, env(safe-area-inset-top));
+bottom: max(16px, env(safe-area-inset-bottom));
+max-height: calc(100dvh - 32px);
+overflow-y: auto;
+
+Testing for Stage 1:
+1. Open app on iPhone/mobile preview.
+2. Start customer demo tour from the home page.
+3. Confirm the tour card is fully readable.
+4. Confirm the card is not cut off at the bottom.
+5. Confirm buttons are visible and tappable.
+6. Go through every customer tour step.
+7. Start admin/Builder tour on mobile.
+8. Confirm every admin tour card is readable.
+9. Test desktop and confirm the tour still works.
+10. Confirm no white screen and no red console errors.
+
+STAGE 2 — Fix referral points transfer
+
+Problem:
+Referral points are not transferring correctly to either person when:
+1. An existing rewards member shares a referral link/code.
+2. A new customer clicks the referral link.
+3. The new customer creates a rewards account.
+4. The new customer makes a purchase.
+5. The purchase is completed/confirmed.
+
+Definitions:
+- Referrer = the existing customer who shared their referral code.
+- Referred customer = the new customer who used the referral code.
+
+Expected behavior:
+When a new customer signs up using a referral code and completes their first eligible order, both sides should receive the correct referral bonus points if referral rewards are enabled.
+
+Settings to respect:
+- enableRewards
+- enableReferrals
+- referralReferrerBonusPoints
+- referralReferredCustomerBonusPoints
+- referralBonusOnFirstCompletedOrder
+- rewardsAwardOnCompletedOrder
+
+Referral signup rules:
+1. When a new customer joins rewards using /rewards?ref=CODE or /rewards/signup?ref=CODE, save that code on the new customer’s rewards profile as referredByCode.
+2. Normalize referral codes so lowercase/uppercase/spaces do not break matching.
+3. Do not allow a customer to refer themselves.
+4. Do not immediately award points if referralBonusOnFirstCompletedOrder is true.
+5. If referralBonusOnFirstCompletedOrder is false, award according to existing setting behavior, but do not double-award.
+6. If a customer already has a rewards profile, do not create a duplicate profile for the same phone number.
+
+Checkout/order rules:
+1. If a customer already has a rewards profile with referredByCode, the order should carry enough information to process referral rewards later.
+2. If a customer enters a referral code at checkout and does not already have referredByCode, save it to their rewards profile.
+3. If a new rewards profile is created during checkout, save referralCodeUsed or referredByCode correctly.
+4. The referral code used at checkout should be normalized before saving.
+5. The order should store:
+   - referralCodeUsed
+   - rewardsProfileId if available
+   - referralBonusStatus: pending / applied / ineligible / cancelled
+   - referralBonusAppliedAt if applied
+   - referralReferrerProfileId if found
+   - referralReferredProfileId if found
+
+Referral bonus awarding rules:
+Award referral bonus points only when the referred customer’s first eligible order reaches the correct final status, such as completed, or whatever the app uses for completed/confirmed rewards.
+
+When the referred customer’s first eligible order is completed:
+1. Find the referred customer’s rewards profile by order phone/rewardsProfileId.
+2. Find referredByCode on that profile, or referralCodeUsed on the order.
+3. Find the referrer rewards profile whose referralCode matches that code.
+4. Confirm referrer exists.
+5. Confirm referrer is not the same customer/profile.
+6. Confirm this referred customer has not already triggered a referral bonus before.
+7. Add referralReferredCustomerBonusPoints to the referred customer.
+8. Add referralReferrerBonusPoints to the referrer.
+9. Add rewards history entries to both profiles.
+10. Increment referrer successfulReferralCount.
+11. Increment referrer lifetimeReferralPointsEarned.
+12. Mark order referralBonusStatus as applied.
+13. Set referralBonusAppliedAt.
+14. Prevent double awarding if the order is saved/updated multiple times.
+
+Rewards history entries:
+For referred customer:
+- type: bonus
+- points: referralReferredCustomerBonusPoints
+- note: “Referral signup bonus from code CODE”
+- orderId if available
+- createdAt
+
+For referrer:
+- type: bonus
+- points: referralReferrerBonusPoints
+- note: “Referral bonus for referred customer FIRSTNAME or masked phone”
+- orderId if available
+- createdAt
+
+Duplicate prevention:
+Do not award referral bonus again if:
+- the same referred customer places a second order
+- the same order is marked completed twice
+- the status changes away from completed and back to completed
+- the admin refreshes or saves the order again
+- referralBonusStatus is already applied
+- the referred customer already has a successful referral award history for that referredByCode
+
+Admin order screen:
+Show referral status clearly:
+- No referral used
+- Referral pending until first completed order
+- Referral applied
+- Referral ineligible
+- Referral cancelled
+
+Customer rewards page:
+For the referred customer, show their referral bonus after it is applied.
+For the referrer, show successful referral count and referral bonus history.
+Do not show private details of the referred customer publicly.
+
+Testing for Stage 2:
+1. Existing customer Alice has rewards profile and referral code ALICE123.
+2. Bob opens /rewards?ref=ALICE123.
+3. Bob signs up for rewards.
+4. Confirm Bob profile has referredByCode = ALICE123.
+5. Confirm Alice gets no points yet if referralBonusOnFirstCompletedOrder is true.
+6. Bob places first order.
+7. Confirm order has referral info pending.
+8. Mark Bob’s order completed.
+9. Confirm Bob receives referralReferredCustomerBonusPoints.
+10. Confirm Alice receives referralReferrerBonusPoints.
+11. Confirm Alice successfulReferralCount increases by 1.
+12. Confirm both profiles have rewards history entries.
+13. Mark same order completed again/save again and confirm no duplicate points.
+14. Bob places second order and confirm no second referral signup bonus.
+15. Test lowercase/spaced referral codes.
+16. Test self-referral and invalid referral code.
+
+STAGE 3 — Improve Delivery Driver admin flow so it feels more like a delivery app
+
+Problem:
+The Delivery Driver section of the admin feels too much like a regular admin page. It needs to feel more like a simple delivery driver app: fast, mobile-first, focused only on active delivery orders, directions, status updates, and delivery notes.
+
+Goal:
+When a Delivery Driver logs in, they should land on a mobile-friendly delivery dashboard instead of the normal admin dashboard.
+
+Delivery Driver flow:
+1. Delivery Driver logs in.
+2. They are taken directly to a Delivery Dashboard, such as /admin/deliveries or /admin/driver.
+3. They see only delivery-related orders.
+4. They can quickly open an order.
+5. They can tap Directions.
+6. They can update delivery status.
+7. They can add delivery notes.
+8. They can mark delivery complete or report an issue.
+
+Delivery Driver dashboard should feel like a delivery app:
+- Mobile-first layout.
+- Big readable cards.
+- Large tap-friendly buttons.
+- Simple order list.
+- No clutter.
+- No admin settings/sidebar overload if possible.
+- Sticky bottom action bar if helpful.
+- Clear current delivery status.
+- Quick filters:
+  - New deliveries
+  - Ready for delivery
+  - Out for delivery
+  - Delivered
+  - Delivery issues
+- Show today’s deliveries first.
+- Show urgent/upcoming delivery times clearly.
+
+Each delivery order card should show:
+- customer name
+- delivery address
+- requested date/time
+- order status
+- delivery status
+- order total if allowed
+- item count
+- phone button if safe/allowed
+- directions button
+- view details button
+
+Order detail screen for driver should show:
+- customer name
+- delivery address
+- requested date/time
+- order items
+- special instructions
+- delivery notes
+- current delivery status
+- Directions button
+- Call customer button if phone is available and allowed
+- Mark Out for Delivery
+- Mark Delivered
+- Report Delivery Issue
+- Add Note
+
+Delivery statuses:
+- ready for delivery
+- out for delivery
+- delivered
+- delivery issue
+- unable to deliver
+- returned / needs follow-up
+
+Status update rules:
+- Driver can update only delivery-related statuses.
+- Driver cannot change product details, prices, rewards, payment settings, customer rewards points, team users, system/API settings, or secrets.
+- Driver cannot delete orders.
+- Driver cannot refund orders.
+
+Directions:
+- Keep the current free Google Maps directions link for now.
+- If Google Maps API key is missing, directions should still work using the free map URL.
+- If customer delivery address is missing, show a clear warning instead of crashing.
+- Directions button should be large and obvious.
+
+Driver notes:
+- Driver can add timestamped notes.
+- Notes should show who added them.
+- Notes should be visible in the main admin order view too.
+- Notes should not overwrite existing admin notes.
+- Use a deliveryNotes array if possible, or a safe structured field.
+
+Optional driver summary cards:
+At top of driver dashboard, show:
+- Deliveries today
+- Out for delivery
+- Completed today
+- Issues
+
+Delivery assignment:
+If simple to add safely:
+- Add assignedDriverId or assignedDriverName to orders.
+- Builder/Admin can assign/unassign delivery driver.
+- Delivery Driver sees assigned orders first.
+- If assignment is not fully built yet, driver can see all delivery orders for now, but label the system as “all delivery orders.”
+
+Testing for Stage 3:
+1. Create a Delivery Driver user.
+2. Log in as Delivery Driver.
+3. Confirm they land on driver delivery dashboard.
+4. Confirm page feels mobile-first and delivery-focused.
+5. Confirm driver sees delivery orders only.
+6. Confirm driver can open an order.
+7. Confirm Directions button opens maps.
+8. Confirm driver can mark Out for Delivery.
+9. Confirm driver can mark Delivered.
+10. Confirm driver can report Delivery Issue.
+11. Confirm driver can add delivery notes.
+12. Confirm delivery notes show in regular admin order view.
+13. Confirm driver cannot access Products, Merch, Rewards settings, Team, Payments, System/API settings, or secrets.
+14. Confirm Builder/Admin still has full normal admin access.
+15. Test on mobile/iPhone width.
+
+STAGE 4 — Add admin revenue totals and all-time revenue
+
+Problem:
+In the admin section, I want to clearly see total revenue, including all-time revenue.
+
+Goal:
+Add clean revenue summary cards to the admin dashboard and/or analytics area.
+
+Revenue cards should include:
+- Today’s revenue
+- This week’s revenue
+- This month’s revenue
+- All-time revenue
+- Total completed orders
+- Average order value
+
+Revenue calculation rules:
+1. Revenue should be based on order totals.
+2. Use the final order total after rewards discounts, delivery fees, and applied discounts.
+3. Do not count cancelled orders.
+4. Do not count refunded orders if refund status exists.
+5. Prefer completed orders for confirmed revenue.
+6. If the app tracks paid orders separately, optionally show:
+   - Completed revenue
+   - Paid revenue
+   - Pending/unpaid order value
+7. Clearly label what the number means so it is not misleading.
+
+Admin dashboard:
+Add summary cards near the top:
+- Today Revenue
+- Month Revenue
+- All-Time Revenue
+- Completed Orders
+
+Analytics page/card:
+If there is already an analytics card, add:
+- all-time revenue
+- revenue by time period
+- average order value
+- top-selling items if easy and safe
+
+Permissions:
+- Builder can see revenue.
+- Site Admin can see revenue if allowed.
+- System Admin can see analytics if allowed.
+- Viewer can see revenue only if viewAnalytics permission allows it.
+- Delivery Driver should not see all-time revenue.
+- Staff should not see all-time revenue unless explicitly allowed.
+- Do not expose revenue on customer-facing pages.
+
+Testing for Stage 4:
+1. Create a few test orders with different totals.
+2. Mark some orders completed.
+3. Leave one order pending.
+4. Cancel one order.
+5. Confirm cancelled order is not counted in completed revenue.
+6. Confirm all-time revenue calculates from completed/non-cancelled orders.
+7. Confirm today/month totals calculate correctly.
+8. Confirm average order value is correct.
+9. Confirm Builder can see revenue cards.
+10. Confirm Delivery Driver cannot see all-time revenue.
+11. Confirm Staff cannot see restricted revenue if not allowed.
+
+STAGE 5 — Candy CrackZZZ branded wording / ZZZ label style
+
+Add Candy CrackZZZ-style wording to visible app labels.
+
+Goal:
+For visible menu labels, page titles, buttons, cards, and section names that end in “s,” replace the ending “s” with a Candy CrackZZZ-style “zzz” or “z” spelling where it still looks good.
+
+Examples:
+- Rewards → Rewardzzz
+- Settings → Settingzzz or Settingz
+- Reviews → Reviewzzz
+- Messages → Messagezzz
+- Orders → Orderzzz
+- Products → Productzzz
+- Campaigns → Campaignzzz
+- Payments → Paymentzzz
+- Notifications → Notificationzzz
+- Referrals → Referralzzz
+- Customers → Customerzzz
+- Deliveries → Deliveriezzz if it looks okay, otherwise Delivery
+- Analytics → Analyticzzz only if it does not look too awkward
+
+Important:
+This should be a visible branding/text change only.
+
+Do not rename:
+- code variables
+- database fields
+- API route names
+- TypeScript types
+- file names
+- imports
+- backend keys
+- permissions
+- URLs unless already customer-facing and safe
+- localStorage keys
+- environment variables
+- secrets
+
+Do not break the app by changing internal names like:
+- rewardsTier1Points
+- enableRewards
+- settings
+- products
+- orders
+- messages
+- rewardProfiles
+- campaigns
+- manageRewards
+- manageSettings
+
+Only change user-facing text shown on the screen.
+
+Use judgment:
+- Keep normal sentences readable.
+- Do not replace every single word ending in “s” inside long paragraphs if it makes the app hard to read.
+- Focus on navigation labels, headings, badges, dashboard cards, buttons, and short labels.
+- Keep legal/privacy/terms text normal and professional.
+- Keep system/API labels clear enough that admins understand them.
+
+Examples of good UI labels:
+- Rewardzzz
+- Settingzzz
+- Orderzzz
+- Messagezzz
+- Reviewzzz
+- Productzzz
+- Team
+- Delivery Driver
+- Builder
+- Customerzzz
+- Campaignzzz
+- Paymentzzz
+
+Testing for Stage 5:
+1. Check admin sidebar labels.
+2. Check dashboard cards.
+3. Check rewards/rewardzzz page.
+4. Check settings/settingzzz page.
+5. Check messages/messagezzz page.
+6. Check reviews/reviewzzz page.
+7. Check orders/orderzzz page.
+8. Confirm no routes broke.
+9. Confirm no API calls broke.
+10. Confirm no TypeScript/build errors.
+11. Confirm the wording still looks readable and intentional.
+
+STAGE 6 — Add toggleable storefront sections for future productzzz like Donutzzz and Dirty Sodazzz
+
+Goal:
+The storefront should not only be for candy-dipped fruit. I want to be able to add other productzzz like Donutzzz and Dirty Sodazzz, each in their own section of the customer storefront. These sections should be toggleable on/off from admin settings. Use sample placeholder pictures for now. I will replace them with actual pictures later.
+
+Important:
+Do not remove or break the existing candy-dipped fruit menu/storefront.
+Do not remove products that already exist.
+Do not break cart, checkout, rewards, referrals, merch, admin, helper, or image upload.
+Do not hard-code this in a way that makes it impossible to add more sections later.
+
+Storefront sections needed now:
+1. Candy-Dipped Fruit / current menu section
+2. Donutzzz
+3. Dirty Sodazzz
+
+Admin toggles:
+Add admin settings toggles for:
+- Enable Donutzzz section
+- Enable Dirty Sodazzz section
+- Show Donutzzz on homepage
+- Show Dirty Sodazzz on homepage
+- Show Donutzzz in menu/storefront
+- Show Dirty Sodazzz in menu/storefront
+
+If the section toggle is off:
+- Hide that section from the public storefront.
+- Hide that section from homepage featured areas.
+- Do not delete the products.
+- Admin should still be able to manage the products.
+
+Product/category structure:
+Add or support product categories such as:
+- candy-fruit
+- candy-grapes
+- candy-pineapple
+- party-trays
+- custom
+- donutzzz
+- dirty-sodazzz
+
+Donutzzz sample products:
+Create a few sample products with placeholder/sample images:
+- Glazed Crack Donutzzz
+- Strawberry Drip Donutzzz
+- Birthday Sprinkle Donutzzz
+- Chocolate Crunch Donutzzz
+
+Dirty Sodazzz sample products:
+Create a few sample products with placeholder/sample images:
+- Dirty Dr Pepper Sodazzz
+- Tropical Cream Sodazzz
+- Blue Raspberry Dirty Sodazzz
+- Strawberry Lime Dirty Sodazzz
+
+Sample pictures:
+Use simple placeholder/sample images for now.
+If no actual images exist, use clean branded placeholder cards or existing placeholder image behavior.
+Do not use broken image icons.
+Make it easy for admin to click the image and replace it later, the same way product/merch images can be changed now.
+
+Customer storefront behavior:
+The public menu/storefront should show sections clearly:
+- Candy-Dipped Fruit
+- Donutzzz
+- Dirty Sodazzz
+
+Each section should have:
+- section title
+- optional short description
+- product cards
+- product image
+- product name
+- short description
+- price
+- add to cart / view item behavior
+- sold out label
+- featured label if applicable
+- seasonal/custom eligibility if already supported
+- rewards compatibility if already supported
+
+Each section should support the same storefront features as the candy-dipped fruit section:
+- product images
+- prices
+- descriptions
+- sold out status
+- availability toggle
+- featured status
+- add to cart
+- product detail page if existing products use one
+- smart descriptions in admin
+- image replacement in admin
+- rewards points on purchase
+- referral/rewards checkout compatibility
+- public visibility toggle
+- admin edit/delete/disable behavior
+- native share button if product share exists
+
+Admin product management:
+In Admin Productzzz, make sure admin can:
+- choose category/section:
+  - Candy-Dipped Fruit
+  - Donutzzz
+  - Dirty Sodazzz
+- upload/change product image
+- edit name
+- edit price
+- edit description
+- generate smart description
+- mark sold out
+- mark featured
+- hide/show product
+- save changes
+- see which section the product belongs to
+
+Homepage:
+If enabled, show Donutzzz and Dirty Sodazzz sections on the homepage in a clean way.
+Do not clutter the homepage.
+Options:
+- show a small featured row for each enabled section
+- or show category cards that link to those sections in the menu
+- or show them inside the menu/storefront only if homepage toggle is off
+
+Order Helper:
+Update the local Order Helper so it knows about Donutzzz and Dirty Sodazzz.
+If customer says:
+- “donuts”
+- “donut”
+- “soda”
+- “dirty soda”
+- “drink”
+- “sweet drink”
+then the helper should recommend real available products from those sections if enabled.
+Do not recommend Donutzzz or Dirty Sodazzz if their sections are disabled or all items are hidden/sold out.
+
+Rewards:
+Donutzzz and Dirty Sodazzz purchases should work with the existing rewards system.
+If rewards points are earned by order total, these products should count like other products unless settings say otherwise.
+Rewards checkout discounts should apply to these products the same way they apply to candy fruit unless category restrictions are added later.
+
+Future-ready:
+Build this so adding more sections later is easy.
+Do not make Donutzzz and Dirty Sodazzz one-off hacks.
+If possible, create a store section/category config that can later support:
+- enabled
+- homepage enabled
+- menu enabled
+- title
+- description
+- sort order
+- category key
+
+Suggested settings:
+- enableDonutzzz
+- showDonutzzzOnHome
+- showDonutzzzInMenu
+- enableDirtySodazzz
+- showDirtySodazzzOnHome
+- showDirtySodazzzInMenu
+
+Or use a better structured setting if the app already supports section configs.
+
+Testing for Stage 6:
+1. Confirm Candy-Dipped Fruit still works.
+2. Turn Donutzzz section on.
+3. Confirm Donutzzz appears on storefront/menu.
+4. Turn Donutzzz section off.
+5. Confirm Donutzzz disappears from public storefront but products are not deleted.
+6. Turn Dirty Sodazzz section on.
+7. Confirm Dirty Sodazzz appears on storefront/menu.
+8. Turn Dirty Sodazzz section off.
+9. Confirm Dirty Sodazzz disappears from public storefront but products are not deleted.
+10. Confirm Donutzzz products can be added to cart.
+11. Confirm Dirty Sodazzz products can be added to cart.
+12. Confirm checkout works with Donutzzz and Dirty Sodazzz.
+13. Confirm rewards can apply to orders with these products.
+14. Confirm admin can replace sample images.
+15. Confirm admin can edit prices/descriptions.
+16. Confirm smart descriptions work for Donutzzz and Dirty Sodazzz without OpenAI.
+17. Confirm Order Helper recommends Donutzzz and Dirty Sodazzz only when enabled.
+18. Confirm no broken images.
+19. Confirm no white screen and no console errors.
+
+Build:
+Run:
+pnpm --filter @workspace/candy-crackzzz run build
+pnpm --filter @workspace/api-server run build
+
+Final report:
+Explain exactly:
+1. What caused the mobile demo tour card to sit too low.
+2. What was done to fix the iPhone/mobile tour layout.
+3. Whether desktop tour still works.
+4. Why referral points were not transferring.
+5. Whether the referral issue was signup storage, checkout storage, order completion logic, status handling, duplicate prevention, or rewards history.
+6. How referrer points are awarded.
+7. How referred customer points are awarded.
+8. How duplicate referral awards are prevented.
+9. What was changed in the Delivery Driver flow.
+10. What page/route drivers land on.
+11. How directions work.
+12. How delivery notes work.
+13. What drivers are blocked from accessing.
+14. Where total revenue is shown.
+15. How all-time revenue is calculated.
+16. Which order statuses are included/excluded.
+17. Which visible labels were changed to Candy CrackZZZ-style spelling.
+18. Confirm only visible UI text was changed and no internal code/database/API names were renamed.
+19. What new storefront sections were added.
+20. Where the Donutzzz and Dirty Sodazzz toggles are located.
+21. How Donutzzz and Dirty Sodazzz can be turned on/off.
+22. What sample products/images were added.
+23. How admin can replace the images later.
+24. How these sections work with cart, checkout, rewards, and Order Helper.
+25. Confirm the existing candy-dipped fruit section still works.
+26. Files changed.
+27. Tests run.
+28. Whether frontend/API builds passed.

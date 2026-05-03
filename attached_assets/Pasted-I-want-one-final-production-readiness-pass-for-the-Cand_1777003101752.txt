@@ -1,0 +1,659 @@
+I want one final production-readiness pass for the Candy CrackZZZ app.
+
+Please inspect the full project first, then fix anything still wrong with admin login, messaging, notifications, rewards, email alerts, text alerts, persistence, and production deployment.
+
+The goal is to get the published Candy CrackZZZ app ready so I can later add the required numbers, tokens, and API keys into Replit Secrets without needing another major rebuild.
+
+Important context:
+
+This app previously had /_cc/api/* routes that only worked in Vite preview/dev mode. Those were moved to real api-server routes under /api/cc/*. Please verify this is still correct and do not bring back dev-only API middleware as the production dependency.
+
+This app is deployed on Replit Autoscale, so do not rely on temporary local JSON file storage for business-critical production data if there is a database available. If the current JSON storage is still being used, migrate the production data to the existing Postgres/Drizzle/@workspace/db setup or another durable Replit-safe database method already present in this workspace.
+
+Do not expose secrets in frontend code. Do not hard-code real passwords, Twilio tokens, Resend keys, or admin credentials into the browser bundle.
+
+Main goals:
+
+1. Admin login works in the published app.
+2. Admin login uses ADMIN_USERNAME and ADMIN_PASSWORD from Replit Secrets.
+3. SESSION_SECRET is used for secure sessions.
+4. No public visitor can create the first admin account.
+5. The admin setup screen must be disabled in production.
+6. The storefront remains public.
+7. The admin dashboard remains protected.
+8. Customer messaging works.
+9. Admin message inbox works.
+10. In-app admin notifications work.
+11. Email notifications are prepared and work once Resend secrets are added.
+12. Text/SMS notifications are prepared and work once Twilio secrets are added.
+13. The rewards system works and persists.
+14. Menu, payment settings, messages, notifications, orders, customers, rewards, and admin users survive refresh, redeploy, cold start, and different devices.
+15. At the end, give me an exact checklist of what I need to put into Replit Secrets and what I need to do to activate messaging, notifications, email alerts, text alerts, and rewards.
+
+Please perform these sections carefully.
+
+SECTION 1 — Production route audit
+
+Search the codebase for:
+
+/_cc/api
+/api/cc
+localStorage
+messages
+notifications
+orders
+rewards
+rewardProfiles
+payment
+auth
+login
+setup
+admin
+SESSION_SECRET
+ADMIN_USERNAME
+ADMIN_PASSWORD
+TWILIO
+RESEND
+ORDER_NOTIFICATION
+EMAIL
+
+Verify the frontend is not calling the old /_cc/api/* routes.
+
+The production frontend should call real backend routes like:
+
+/api/cc/bootstrap
+/api/cc/auth/login
+/api/cc/auth/logout
+/api/cc/messages
+/api/cc/notifications
+/api/cc/orders
+/api/cc/rewards
+/api/cc/payment-settings
+/api/cc/state
+
+If old /_cc/api/* calls still exist, update them to the production backend routes.
+
+SECTION 2 — Admin login and auth
+
+Fix admin login completely.
+
+Requirements:
+
+1. Use Replit Secrets/environment variables:
+
+ADMIN_USERNAME
+ADMIN_PASSWORD
+SESSION_SECRET
+
+2. If ADMIN_USERNAME and ADMIN_PASSWORD exist, those are the active owner/admin credentials.
+
+3. If a fallback owner/admin account was already seeded before the secrets existed, safely sync or reset only the owner/admin auth record so it matches ADMIN_USERNAME and ADMIN_PASSWORD.
+
+4. Do not expose the password value.
+
+5. Do not log the password value.
+
+6. Do not put credentials in frontend code.
+
+7. Do not store admin password in localStorage.
+
+8. Passwords must not be stored in plain text.
+
+9. Server must validate the login.
+
+10. The frontend must not decide admin status by itself.
+
+11. The admin setup/create-first-admin route must stay disabled in production.
+
+12. POST /api/cc/auth/setup should return 403 or otherwise be unavailable in production.
+
+13. Wrong username/password should return 401.
+
+14. Correct ADMIN_USERNAME and ADMIN_PASSWORD should log in.
+
+15. Session should survive refresh while valid.
+
+16. Admin-only routes must reject unauthenticated users.
+
+17. Storefront/public routes must remain available.
+
+Please test:
+
+POST /api/cc/auth/login with wrong credentials
+POST /api/cc/auth/login with correct credentials
+GET /api/cc/bootstrap after login
+POST /api/cc/auth/logout
+POST /api/cc/auth/setup blocked
+
+SECTION 3 — Durable database persistence
+
+If the app is still using temporary JSON file storage, migrate production data to durable database storage.
+
+Use the existing workspace database setup if available.
+
+Create or verify database tables for:
+
+1. Admin users / employees
+2. Sessions if needed
+3. Products/menu items
+4. Product images or image references
+5. Orders
+6. Customer messages
+7. Notifications
+8. Payment settings
+9. Business settings
+10. Rewards settings
+11. Customer reward profiles
+12. Reward transactions/history
+13. Reviews if present
+14. Customer/contact records if useful
+
+Do not rely on Replit Autoscale local filesystem for production persistence.
+
+Data must survive:
+
+1. Page refresh
+2. Logout/login
+3. Browser change
+4. Device change
+5. Redeploy
+6. Autoscale cold start
+7. Server restart
+
+If images are currently saved as huge base64 strings, either move them to a safer storage approach or clearly report the limitation and recommend object storage. Do not let large base64 storage break the app.
+
+SECTION 4 — Customer messaging system
+
+Add or verify a complete messaging system.
+
+Customer-facing requirements:
+
+1. Add a Contact / Message / Custom Order Request form if one does not already exist.
+2. The form should be easy for customers to find from the storefront.
+3. Fields should include:
+
+Customer name
+Phone number
+Email address, optional
+Message
+Order/question type, optional
+Preferred contact method, optional
+
+4. Customers should not need to log in to send a message.
+5. Submitting a message should save it through the backend/database.
+6. Submitting a message should create an in-app admin notification.
+7. Submitting a message should optionally trigger email/SMS alerts if secrets are configured.
+8. If email/SMS secrets are missing, the customer message should still save and the app should not crash.
+
+Admin requirements:
+
+1. Add a Messages Inbox in the admin dashboard.
+2. Admin can view all customer messages.
+3. Admin can see unread/read status.
+4. Admin can see date/time received.
+5. Admin can see customer name, phone, email, and message.
+6. Admin can mark messages as read.
+7. Admin can archive or delete messages if that fits the current app style.
+8. Messages must persist after refresh/restart.
+9. Messages must not be publicly visible.
+
+Preferred routes:
+
+POST /api/cc/messages
+GET /api/cc/messages
+GET /api/cc/messages/:id
+POST /api/cc/messages/:id/read
+POST /api/cc/messages/:id/archive
+DELETE /api/cc/messages/:id
+
+Public can only POST a new message.
+
+Admin authentication is required for reading, marking read, archiving, or deleting.
+
+SECTION 5 — In-app notification system
+
+Add or verify a complete in-app notification system.
+
+Admin dashboard should have:
+
+1. Notification bell or notification area.
+2. Unread notification count.
+3. List of notifications.
+4. New message notifications.
+5. New order notifications.
+6. Reward-related notifications if useful.
+7. Date/time for each notification.
+8. Read/unread status.
+9. Mark one notification as read.
+10. Mark all as read.
+11. Click notification to view related message/order/reward item if possible.
+
+Notifications should be created when:
+
+1. A customer sends a message.
+2. A customer places an order.
+3. A customer submits a custom order request.
+4. A customer signs up for rewards if that feature exists.
+5. A reward is redeemed if that feature exists.
+
+Preferred routes:
+
+GET /api/cc/notifications
+POST /api/cc/notifications
+POST /api/cc/notifications/:id/read
+POST /api/cc/notifications/read-all
+DELETE /api/cc/notifications/:id if deletion exists
+
+Admin-only for reading/updating notifications.
+
+Public routes can create notification events only through safe actions like submitting a message/order.
+
+SECTION 6 — Email notifications using Resend
+
+Prepare email notifications so they work once I add Replit Secrets.
+
+Use Resend or the existing email provider code if already present.
+
+Required secrets:
+
+RESEND_API_KEY
+ORDER_FROM_EMAIL
+ORDER_NOTIFICATION_EMAIL
+
+Optional secrets:
+
+BUSINESS_NAME
+ADMIN_NOTIFICATION_EMAIL
+CUSTOMER_REPLY_TO_EMAIL
+
+Email notification requirements:
+
+1. New customer message can send an email to the business/admin.
+2. New order can send an email to the business/admin.
+3. Custom order request can send an email to the business/admin.
+4. Email should include customer name, phone, email, order/message details, and timestamp.
+5. Do not expose email API keys in frontend code.
+6. Email sending must happen server-side only.
+7. If Resend secrets are missing, do not crash. Save the message/order and create in-app notification anyway.
+8. Admin dashboard should show whether email notifications are configured or missing.
+9. Backend logs should clearly say email skipped because secrets are missing, without treating it as a fatal app error.
+10. Include a safe test endpoint or admin test button if appropriate.
+
+Preferred route:
+
+POST /api/cc/notifications/test-email
+
+This route should be admin-only.
+
+SECTION 7 — Text/SMS notifications using Twilio
+
+Prepare SMS/text notifications so they work once I add Replit Secrets.
+
+Required secrets:
+
+TWILIO_ACCOUNT_SID
+TWILIO_AUTH_TOKEN
+TWILIO_FROM_PHONE
+ORDER_NOTIFICATION_PHONE
+
+Optional secrets:
+
+ADMIN_NOTIFICATION_PHONE
+TWILIO_MESSAGING_SERVICE_SID
+
+SMS notification requirements:
+
+1. New customer message can send a text alert to the business/admin.
+2. New order can send a text alert to the business/admin.
+3. Custom order request can send a text alert to the business/admin.
+4. SMS should include short useful info: customer name, phone, type, and a short message/order summary.
+5. Do not expose Twilio tokens in frontend code.
+6. SMS sending must happen server-side only.
+7. Phone numbers should use +1 format for US numbers.
+8. If Twilio secrets are missing, do not crash. Save the message/order and create in-app notification anyway.
+9. Admin dashboard should show whether SMS notifications are configured or missing.
+10. Backend logs should clearly say SMS skipped because secrets are missing, without treating it as a fatal app error.
+11. Include a safe test endpoint or admin test button if appropriate.
+
+Preferred route:
+
+POST /api/cc/notifications/test-sms
+
+This route should be admin-only.
+
+SECTION 8 — Order notifications
+
+Verify or fix order notifications.
+
+When a customer submits an order/cart/custom order:
+
+1. Save the order to durable storage.
+2. Create in-app admin notification.
+3. Add order to admin order list if one exists.
+4. Send email alert if Resend secrets are configured.
+5. Send SMS alert if Twilio secrets are configured.
+6. Do not crash if email/SMS is not configured.
+7. Customer should get a clear success message after submitting.
+8. Admin should see the order and notification after logging in.
+
+If the existing route POST /api/notifications/order still exists outside /api/cc, either keep it working or integrate it cleanly with /api/cc/orders and /api/cc/notifications.
+
+Do not leave duplicate broken routes.
+
+SECTION 9 — Rewards system
+
+Add or verify a basic rewards system suitable for Candy CrackZZZ.
+
+The rewards system should work without external services.
+
+Admin settings should include:
+
+1. Rewards enabled/disabled toggle.
+2. Business-friendly reward rules.
+3. Points per dollar or points per order setting.
+4. Optional punch-card style setting, such as buy X items/orders and get reward.
+5. Reward redemption threshold.
+6. Reward name/description.
+7. Ability to manually add/subtract points.
+8. Ability to search customer rewards by phone number or email.
+9. Ability to see reward history.
+
+Customer-facing rewards should include:
+
+1. Customer can join rewards using name and phone number.
+2. Email optional.
+3. Customer can check reward status using phone or email.
+4. Customer can see points/punches/reward status.
+5. Customer should not see other customers’ information.
+6. Customer should not have admin controls.
+
+Admin rewards dashboard should include:
+
+1. List/search reward customers.
+2. Customer name, phone, email if provided.
+3. Points or punch count.
+4. Reward status.
+5. Manual adjustment.
+6. Mark reward redeemed.
+7. Reward transaction/history log.
+8. Notifications when a customer signs up or redeems a reward if useful.
+
+Rewards should connect to orders if possible:
+
+1. When an order is submitted, customer can optionally enter phone/email for rewards.
+2. App can add points/punch credit based on admin reward settings.
+3. Admin can see that order contributed to rewards.
+4. Customer can check updated reward status.
+
+Preferred routes:
+
+GET /api/cc/rewards/settings
+POST /api/cc/rewards/settings
+POST /api/cc/rewards/signup
+POST /api/cc/rewards/lookup
+GET /api/cc/rewards/customers
+GET /api/cc/rewards/customers/:id
+POST /api/cc/rewards/customers/:id/adjust
+POST /api/cc/rewards/customers/:id/redeem
+GET /api/cc/rewards/customers/:id/history
+
+Public routes:
+
+POST /api/cc/rewards/signup
+POST /api/cc/rewards/lookup
+
+Admin-only routes:
+
+Settings
+Customer list
+Manual adjustment
+Redeem
+History management
+
+Rewards data must persist in the database.
+
+SECTION 10 — Admin dashboard cleanup
+
+Add a clean admin dashboard layout if needed.
+
+Admin dashboard should clearly show:
+
+1. Orders
+2. Messages
+3. Notifications
+4. Menu/products
+5. Payment settings
+6. Rewards
+7. Notification settings/status
+8. Admin/employee access if already present
+
+Add status indicators for:
+
+Email notifications: configured / missing secrets
+SMS notifications: configured / missing secrets
+Rewards: enabled / disabled
+Database persistence: connected / error
+Admin auth: active
+
+Do not show secret values, only configured/not configured.
+
+SECTION 11 — Payment settings
+
+Verify payment method settings still work and persist.
+
+Payment settings should include configurable methods such as:
+
+1. Cash App
+2. Venmo
+3. Zelle
+4. Square
+5. QR code payment
+6. Cash at pickup/delivery if applicable
+
+Admin should be able to:
+
+1. Toggle payment methods on/off.
+2. Add payment username/handle/instructions.
+3. Add QR image or image URL if supported.
+4. Save settings.
+5. Refresh and see settings persisted.
+
+Customer storefront should only show enabled payment methods.
+
+Do not expose sensitive admin-only payment setup details beyond the customer-facing payment instructions that are meant to be shown.
+
+SECTION 12 — Error handling and missing secrets
+
+Make the app safe when secrets are missing.
+
+If these are missing:
+
+RESEND_API_KEY
+ORDER_FROM_EMAIL
+ORDER_NOTIFICATION_EMAIL
+
+Then email alerts should show as “not configured” in admin, but the app should still save orders/messages and create in-app notifications.
+
+If these are missing:
+
+TWILIO_ACCOUNT_SID
+TWILIO_AUTH_TOKEN
+TWILIO_FROM_PHONE
+ORDER_NOTIFICATION_PHONE
+
+Then SMS alerts should show as “not configured” in admin, but the app should still save orders/messages and create in-app notifications.
+
+If these are missing:
+
+ADMIN_USERNAME
+ADMIN_PASSWORD
+SESSION_SECRET
+
+Then report clearly what is missing. Do not allow insecure production admin access.
+
+Do not crash the entire storefront because optional notification secrets are missing.
+
+SECTION 13 — Build and deployment
+
+Verify the app works in production, not just preview.
+
+Please run:
+
+Install if needed
+Typecheck if available
+Lint if available
+Build
+Production start command
+
+Verify Replit Autoscale deployment settings.
+
+The app should not be deployed as static-only if backend routes are required.
+
+Confirm:
+
+1. Frontend loads.
+2. Backend /api routes work.
+3. Admin login works.
+4. Storefront is public.
+5. Admin is protected.
+6. Messages work.
+7. Notifications work.
+8. Rewards work.
+9. Payment settings persist.
+10. Orders persist.
+11. Email/SMS gracefully skip if secrets are missing.
+12. Email/SMS send if test secrets are configured.
+
+SECTION 14 — Tests to perform
+
+Please test these flows and report pass/fail:
+
+Admin/Auth:
+
+1. Wrong admin login fails.
+2. Correct ADMIN_USERNAME and ADMIN_PASSWORD login succeeds.
+3. Admin dashboard opens.
+4. Refresh keeps admin logged in.
+5. Logout works.
+6. Public setup route is blocked.
+
+Messages:
+
+1. Customer sends message.
+2. Message saves.
+3. In-app notification is created.
+4. Admin sees message.
+5. Admin marks message read.
+6. Refresh keeps message/read status.
+
+Notifications:
+
+1. Unread notification count appears.
+2. New message creates notification.
+3. New order creates notification.
+4. Mark notification read works.
+5. Mark all read works.
+6. Notifications persist.
+
+Orders:
+
+1. Customer submits test order/cart/custom order.
+2. Order saves.
+3. Admin sees order.
+4. In-app notification appears.
+5. Email/SMS skipped safely if secrets missing.
+
+Rewards:
+
+1. Rewards can be enabled.
+2. Customer can sign up.
+3. Customer can look up reward status.
+4. Admin can view reward customer.
+5. Admin can manually adjust points/punches.
+6. Admin can redeem reward.
+7. Reward history persists.
+8. Reward data survives refresh/restart.
+
+Payment settings:
+
+1. Admin toggles payment method.
+2. Settings save.
+3. Customer storefront shows enabled methods only.
+4. Refresh keeps settings.
+
+Persistence:
+
+1. Restart production server.
+2. Confirm messages still exist.
+3. Confirm notifications still exist.
+4. Confirm products/menu still exist.
+5. Confirm rewards still exist.
+6. Confirm payment settings still exist.
+
+SECTION 15 — Final report I need from you
+
+At the end, give me a clear plain-English report with:
+
+1. What was broken.
+2. What you fixed.
+3. What files you changed.
+4. What database tables or schema changes you added.
+5. What API routes now exist.
+6. Whether old /_cc/api routes are fully gone or redirected.
+7. Whether admin login was tested.
+8. Whether messaging was tested.
+9. Whether in-app notifications were tested.
+10. Whether order notifications were tested.
+11. Whether email notifications are ready.
+12. Whether SMS notifications are ready.
+13. Whether rewards are working.
+14. Whether data is durable through Replit Autoscale restarts.
+15. Whether I need to republish/restart.
+16. Any remaining limitations.
+
+Also give me an exact setup checklist titled:
+
+WHAT AUSTIN NEEDS TO DO NEXT
+
+That checklist should include exactly which Replit Secrets I need to add, what each one is for, and whether it is required or optional.
+
+Use this list:
+
+Required for admin login:
+
+ADMIN_USERNAME = the admin username I want to use
+ADMIN_PASSWORD = the admin password I want to use
+SESSION_SECRET = long random secret text for sessions
+
+Required for email notifications:
+
+RESEND_API_KEY = API key from Resend
+ORDER_FROM_EMAIL = verified sender email address
+ORDER_NOTIFICATION_EMAIL = email address that receives order/message alerts
+
+Required for SMS/text notifications:
+
+TWILIO_ACCOUNT_SID = Twilio Account SID
+TWILIO_AUTH_TOKEN = Twilio Auth Token
+TWILIO_FROM_PHONE = Twilio phone number that sends texts, in +1 format
+ORDER_NOTIFICATION_PHONE = my phone number that receives alerts, in +1 format
+
+Optional:
+
+BUSINESS_NAME = Candy CrackZZZ
+ADMIN_NOTIFICATION_EMAIL = alternate admin alert email if used
+ADMIN_NOTIFICATION_PHONE = alternate admin alert phone if used
+CUSTOMER_REPLY_TO_EMAIL = reply-to email if used
+TWILIO_MESSAGING_SERVICE_SID = Twilio messaging service if used
+
+Explain that in-app messages, in-app notifications, and rewards should work without Twilio or Resend.
+
+Explain that email alerts require Resend secrets.
+
+Explain that text alerts require Twilio secrets.
+
+Explain that after adding or changing Replit Secrets, I need to restart/republish the deployment.
+
+Final result needed:
+
+Candy CrackZZZ should be production-ready with working admin login, customer messaging, admin inbox, in-app notifications, optional email alerts, optional SMS alerts, working rewards system, persistent database storage, protected admin routes, public storefront, and a clear setup checklist for me.

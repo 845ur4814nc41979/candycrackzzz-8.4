@@ -1,0 +1,444 @@
+Make the next Candy CrackZZZ app update. Please organize the work carefully and do not break the existing app.
+
+Important:
+Do not remove the current no-paid-API fallback features. The app should continue working without OpenAI, Google Maps API, SMS API, or email API keys for now. However, build the app so it is future-ready because I plan to add those API keys later.
+
+Work in stages. Do not attempt to rebuild the whole app at once. Complete and test each section before moving to the next.
+
+Recommended order:
+1. Homepage button text change.
+2. Referral link and rewards signup flow.
+3. Apply rewards at checkout.
+4. Review photo uploads.
+5. Team roles: Builder and Delivery Driver.
+6. Future API readiness settings.
+7. Native share updates/referral signup links cleanup.
+8. Final testing/build checks.
+
+After each stage:
+- Test the affected page.
+- Make sure the app still loads.
+- Make sure /menu, /cart, /rewards, /admin/login, and /admin still work.
+- Do not continue to the next stage if the current stage causes a white screen or console error.
+
+Current future API plan:
+- I will later add an OpenAI / ChatGPT API key so the Order Helper and AI descriptions can become more accurate.
+- I will later add a Google Maps API key for more accurate delivery mileage, drive time, and directions.
+- I will later add a phone/SMS API for customer messages, rewards, specials, admin notifications, and customer notifications.
+- I will later add an email API key for email notifications, reward messages, specials, and order updates.
+
+For now:
+- Keep the local Order Helper working.
+- Keep the local Smart Description Generator working.
+- Keep the free Google Maps direction link working.
+- Keep local/browser notifications working.
+- Do not require paid APIs yet.
+- Do not show scary errors if API keys are missing.
+
+Main changes needed:
+
+STAGE 1 — Homepage button text change
+
+On the main home screen, change the button currently labeled:
+
+Overview / Browse Menu
+
+to:
+
+Order / Menu
+
+It should still go to the menu/order page.
+
+Keep the second button as the helper button, such as:
+
+Order Helper
+
+Do not bring back redundant buttons. The home screen should stay clean with only two main hero buttons:
+- Order / Menu
+- Order Helper
+
+Test before continuing:
+- Home page loads.
+- Order / Menu goes to menu.
+- Order Helper opens the helper.
+- No redundant Browse Menu button remains.
+
+STAGE 2 — Referral share link must go to rewards signup
+
+The referral share link needs to do more than just go to a basic rewards check page.
+
+Current problem:
+When someone receives a referral link, clicks it, and goes to the rewards page, they may enter their phone number and the app says they are not in the system. That is confusing.
+
+Needed behavior:
+When someone clicks a referral link, it should go to a rewards signup page or rewards signup section where they can join rewards and the referral code is already captured.
+
+Create or improve the rewards signup flow.
+
+Referral link format should be something like:
+- /rewards?ref=REFERRALCODE
+or
+- /rewards/signup?ref=REFERRALCODE
+
+When a new customer clicks the referral link:
+- Show a clear Rewards Signup form, not only “check points.”
+- Pre-fill or store the referral code from the link.
+- Ask for phone number.
+- Ask for name.
+- Ask for email if useful.
+- Birthday field optional if birthday rewards are enabled.
+- Let them sign up for rewards.
+- Create a rewards profile.
+- Attach the referral code to the new rewards profile as the referred-by code.
+- Do not immediately award referral points unless the settings say to do so.
+- If referral bonus is supposed to happen after first completed order, mark it as pending until first completed order.
+
+Rewards page should have two clear sections:
+- Join Rewards
+- Check My Rewards
+
+If customer is not found during lookup:
+Do not just say “not in system.”
+Show:
+“No rewards account found. Join rewards here.”
+
+Then show or link to the signup form.
+
+Referral share message should use the new signup link.
+
+Example:
+“Use my Candy CrackZZZ referral link to join rewards and order something sweet: [link]”
+
+Do not invent rewards or discounts. Only mention point bonuses if the real settings are enabled.
+
+STAGE 3 — Rewards signup page / rewards member creation
+
+Create a clear customer rewards signup flow.
+
+Customer should be able to join rewards with:
+- name
+- phone number
+- email optional
+- birthday optional
+- referral code optional
+- opt-in for promo texts optional
+- opt-in for promo emails optional
+
+Rules:
+- Phone number should be normalized.
+- Prevent duplicate reward profiles for the same phone number.
+- If a matching phone already exists, show a safe message and offer to check rewards instead.
+- Do not expose private customer data.
+- Public users should only see their own safe summary after lookup/signup.
+
+After signup:
+Show:
+- welcome message
+- current points
+- referral code
+- Share Referral button
+- how to earn points
+- how to apply rewards at checkout
+
+Test before continuing:
+- Existing customer can check points.
+- Unknown customer gets join rewards option, not a dead-end message.
+- Referral link opens signup with referral code captured.
+- New rewards profile is created safely.
+- Duplicate phone number does not create duplicate rewards accounts.
+
+STAGE 4 — Apply rewards in cart/checkout
+
+In the cart/checkout page, if the customer has enough rewards points, they need to be able to click and apply rewards to the order.
+
+Add an “Apply Rewards” section in cart/checkout.
+
+Flow:
+- Customer enters phone number and verification info, or uses rewards lookup if already completed.
+- If a rewards profile is found, show current points.
+- Show available rewards based on settings:
+  - rewardsTier1Points / rewardsTier1Discount
+  - rewardsTier2Points / rewardsTier2Discount
+  - rewardsTier3Points / rewardsTier3Discount
+- Only show rewards the customer has enough points for.
+- Customer can click “Apply Reward.”
+- The discount should subtract from order total.
+- Show:
+  - subtotal
+  - delivery fee if any
+  - rewards discount
+  - final total
+  - points to be redeemed
+  - estimated remaining points
+- Do not allow discount greater than order total.
+- Do not allow redeeming more points than the customer has.
+- Respect rewardsAllowPromoStacking.
+- If promo stacking is disabled, do not allow reward discount and promo/campaign discount at the same time.
+- Store the reward redemption on the order as pending.
+- Prevent double redemption.
+- If the order is cancelled, do not deduct points.
+- Points should be deducted when the order reaches the configured final status, such as completed or confirmed, based on existing settings.
+
+Order should store:
+- rewardsProfileId or safe rewards reference
+- rewardsRedeemedPoints
+- rewardsDiscountAmount
+- rewardsRedemptionStatus: pending / applied / cancelled
+- rewardsAppliedAt
+- rewardsRedeemedAt
+
+Admin order screen should show:
+- reward applied
+- points pending redemption
+- discount amount
+- redemption status
+- option to apply/confirm redemption if needed
+
+Test before continuing:
+- Customer with enough points can apply reward.
+- Discount shows in cart.
+- Final total updates.
+- Order stores pending redemption.
+- Admin can see redemption.
+- Points are not double-deducted.
+- Cancelled order does not deduct points.
+
+STAGE 5 — Review photos from customers
+
+Customers need to be able to upload or attach a picture with their review.
+
+Example:
+A customer buys candy, takes a picture of what they purchased, and posts it with their review.
+
+Add review image support:
+- Customer review form should allow optional photo upload.
+- Accept image files only.
+- On mobile, allow camera/photo library where supported.
+- Preview the image before submitting.
+- Save the image with the review.
+- Admin reviews page should show the photo.
+- Admin can approve/hide/delete reviews with photos.
+- Customer-facing reviews section should show approved review photos.
+- If no image is included, the review should still work normally.
+- Keep file size reasonable, such as 2 MB or 3 MB max.
+- Use the current image/base64 storage approach for now unless the app already has a better upload system.
+- Do not expose private customer data with the review photo.
+
+Review fields should support:
+- customer name
+- rating
+- review text
+- optional image
+- product/order reference if already available
+- approved/pending status
+- created date
+
+Test before continuing:
+- Customer submits review with photo.
+- Admin sees pending review photo.
+- Admin approves review.
+- Customer-facing review shows photo.
+- Review without photo still works.
+
+STAGE 6 — Team roles and delivery driver login
+
+In the Team page / admin users system, add or confirm a delivery driver role under staff.
+
+Roles should include:
+- Builder
+- Site Admin
+- System Admin
+- Campaign / Rewards Admin
+- Staff
+- Delivery Driver
+- Viewer
+
+Change the role/person with full control from “Owner” to “Builder.”
+
+Important:
+This is mostly a label/name change in the UI. The Builder role should still have full control over everything.
+
+Builder:
+- full access
+- can manage team
+- can manage settings
+- can manage products
+- can manage merch
+- can manage orders
+- can manage campaigns/rewards
+- can manage system settings
+- can manage backups
+- can see analytics
+- can do everything the old Owner role did
+
+For backwards compatibility:
+- If the backend still uses owner internally, that is okay.
+- The UI should display Builder instead of Owner.
+- Do not break existing owner/admin login.
+- Do not lock me out.
+- Do not delete existing admin users.
+- Do not create a new setup problem.
+
+Delivery Driver role:
+- Can log into admin/staff area.
+- Can see assigned or all delivery orders, depending on what is easiest for now.
+- Can see delivery address.
+- Can use Directions button.
+- Can update delivery status:
+  - out for delivery
+  - delivered
+  - delivery issue
+- Can add delivery notes.
+- Cannot change products, merch, pricing, settings, rewards rules, team users, or payment settings.
+- Cannot see sensitive system settings or secrets.
+- Should only see what is needed to complete deliveries.
+
+Team page:
+- Add Delivery Driver as a role choice.
+- Show role descriptions.
+- Let Builder create delivery driver login.
+- Let Builder disable delivery driver login.
+- Let Builder reset password.
+
+Test before continuing:
+- Builder label appears instead of Owner.
+- Existing owner login still works.
+- Builder has full access.
+- Delivery Driver can log in.
+- Delivery Driver only sees delivery/order tools.
+- Staff cannot access protected Builder/System pages.
+
+STAGE 7 — Future API settings placeholders
+
+Add or improve a clear System/API Settings area showing future API readiness.
+
+Do not require keys now. Do not expose key values.
+
+Show configured/missing status only for:
+- OpenAI / ChatGPT API
+- Google Maps API
+- SMS/phone messaging API
+- Email API
+- Push notifications if present
+
+The UI should explain:
+- Local helper is active until OpenAI is configured.
+- Free Google Maps link is active until Google API is configured.
+- Manual/browser notifications are active until SMS/email/push is configured.
+- Promo texts/emails will require future SMS/email configuration.
+
+Do not show actual API keys.
+Do not let normal staff see or edit API keys.
+Only Builder/System Admin should see the system/API readiness area.
+
+Test before continuing:
+- App works without OpenAI key.
+- App works without Google API key.
+- App works without SMS API key.
+- App works without email API key.
+- System settings show missing/configured status without exposing secrets.
+
+STAGE 8 — Native share links and referral signup links cleanup
+
+Keep or improve the native share behavior:
+- Use navigator.share() first.
+- On iPhone and Android, open the native share sheet.
+- Fallback on desktop/unsupported browsers:
+  - Copy Link
+  - Copy Message
+  - Share by Text Message
+  - Share by Email
+  - Close
+
+Make sure referral share links use the new rewards signup referral URL.
+
+Referral share should include:
+- The referral code.
+- The signup/referral URL.
+- No private customer data.
+- No invented discount or reward amounts.
+
+For general product/app sharing:
+- Title: Candy CrackZZZ or the product/merch name.
+- Text: Check out Candy CrackZZZ or specific product text.
+- URL: current product/menu/app link.
+
+Do not manually recreate AirDrop, Messages, Mail, or contact shortcuts. The phone’s operating system controls those through the native share sheet.
+
+Test before continuing:
+- Referral share opens native share sheet on supported mobile devices.
+- Desktop fallback works.
+- Referral link opens rewards signup.
+- Referral code is captured.
+
+STAGE 9 — Final testing
+
+Test homepage:
+- Home page has Order / Menu button.
+- Order / Menu goes to menu.
+- Order Helper opens helper.
+- No redundant Browse Menu button remains.
+
+Test review photos:
+- Customer submits review with photo.
+- Admin sees pending review photo.
+- Admin approves review.
+- Customer-facing review shows photo.
+- Review without photo still works.
+
+Test referral signup:
+- Existing customer shares referral link.
+- New customer opens referral link.
+- Rewards signup form appears.
+- Referral code is captured.
+- New customer signs up.
+- New rewards profile is created.
+- Referral relationship is stored.
+- Referral bonus does not incorrectly award early unless settings allow it.
+
+Test rewards lookup:
+- Existing customer can check points.
+- Unknown customer gets join rewards option, not a dead-end message.
+
+Test rewards checkout:
+- Customer with enough points can apply reward.
+- Discount shows in cart.
+- Final total updates.
+- Order stores pending redemption.
+- Admin can see redemption.
+- Points are not double-deducted.
+- Cancelled order does not deduct points.
+
+Test team roles:
+- Builder label appears instead of Owner.
+- Existing owner login still works.
+- Builder has full access.
+- Delivery Driver can log in.
+- Delivery Driver only sees delivery/order tools.
+- Staff cannot access protected Builder/System pages.
+
+Test API readiness:
+- App works without OpenAI key.
+- App works without Google API key.
+- App works without SMS API key.
+- App works without email API key.
+- System settings show missing/configured status without exposing secrets.
+
+Build:
+Run:
+pnpm --filter @workspace/candy-crackzzz run build
+pnpm --filter @workspace/api-server run build
+
+Final report:
+Explain exactly what was changed, including:
+1. Homepage button change.
+2. Review photo upload.
+3. Referral signup link behavior.
+4. Rewards signup/check rewards flow.
+5. Rewards applied at checkout.
+6. Team role changes, including Builder and Delivery Driver.
+7. Future API readiness settings.
+8. Native share/referral link updates.
+9. Files changed.
+10. Tests run.
+11. Whether frontend/API builds passed.

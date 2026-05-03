@@ -1,0 +1,112 @@
+Fix two UX problems in the Candy Crackzzz app without breaking the current working preview, login, rewards, referrals, checkout, or admin.
+
+Problem 1: iPhone "Add to Home Screen" experience
+Right now the mobile home screen install behavior is confusing. The current button/action just opens or drops out of Share, and I want a cleaner iPhone experience.
+
+Important technical rule:
+Do NOT try to programmatically force Apple's Add to Home Screen flow on iPhone. iOS Safari does not provide a direct install prompt like Android/Chromium. Instead, create the best possible guided UX.
+
+Implement this:
+
+1. Add a dedicated "Install App" / "Add to Home Screen" entry point for mobile
+- Show it only on iPhone/iPad Safari or when relevant
+- Do not just call navigator.share() and hope the install option appears
+- Open a branded modal/sheet with step-by-step instructions:
+  1. Tap the Share button in Safari
+  2. Scroll and tap Add to Home Screen
+  3. Tap Add
+- If helpful, include a small visual hint/icon for the Safari share button
+
+2. Detect installed vs not installed
+- If the app is already running in standalone / installed web app mode, do not show the install prompt
+- If not installed and user is on iPhone/iPad Safari, allow the install help UI to appear
+
+3. Make sure PWA install assets are present and correct
+- verify manifest
+- verify app name / short name
+- verify icons
+- verify apple-touch-icon
+- verify any needed iOS meta tags for home screen web app support
+- do not break current preview/runtime while doing this
+
+4. Keep expectations realistic
+- The UI should guide the user to the native iPhone flow, not claim it can install automatically
+
+Problem 2: Referral sharing is bad on desktop and mobile
+Right now the referral buttons mostly just copy text. I want sharing to work more like YouTube or other apps, where tapping share opens real share options when supported, and otherwise gives useful avenues like text message, email, WhatsApp, etc.
+
+Implement this:
+
+1. Replace the current primary referral sharing action with a true share flow
+- Add a main "Share Referral" button
+- Use navigator.share() when supported
+- Share title, text, and URL if available
+- Make sure it is triggered directly from a user click/tap
+- On supported devices, this should open the system share sheet
+
+2. Keep backup actions
+- Keep separate smaller fallback buttons for:
+  - Copy Code
+  - Copy Share Text
+- Make sure both actually work on desktop and mobile
+- Show a toast after successful copy
+
+3. Add a custom fallback share modal for unsupported browsers/devices
+If navigator.share() is unavailable or throws:
+- open a custom share sheet/modal instead of silently just copying
+- include useful share targets that work from the web, such as:
+  - SMS
+  - Email
+  - WhatsApp
+  - Facebook Messenger if reliable
+  - copy referral link/text
+Only include targets that can be implemented reliably from the browser.
+Do not include fake buttons that do nothing.
+
+4. Improve mobile behavior
+- On iPhone, if navigator.share() is supported, use it first
+- If not, show the custom fallback modal
+- Do not leave the user with a dead click or a silent failure
+
+5. Improve desktop behavior
+- On desktop browsers that support navigator.share(), use it
+- On browsers that do not, show the custom fallback share modal
+- Do not rely only on clipboard copy
+- Make the experience feel intentional and useful
+
+6. Referral content
+Make the share content clean and reusable:
+- clear short share text
+- referral code included
+- include site URL or rewards URL if appropriate
+- make the shared message usable in text message, email, WhatsApp, etc.
+
+7. Do not break current rewards/referrals logic
+Preserve:
+- customer rewards lookup
+- referral codes
+- copy code/share text values
+- pending points
+- recent referral activity
+- admin referral/order logic
+
+8. Keep styling consistent
+- match the current Candy Crackzzz design
+- mobile-friendly and desktop-friendly
+- polished buttons and modal layout
+
+9. Verify after changes
+Check:
+- app still previews
+- rewards page still loads
+- referral sharing works on mobile and desktop
+- install instructions show on iPhone/iPad Safari when appropriate
+- installed/standalone mode does not keep showing install instructions
+- no current routes break
+
+10. Final report
+When finished, report:
+- files changed
+- exactly how install UX now works on iPhone
+- exactly how referral sharing now works on supported vs unsupported browsers
+- any limitations that still exist because of iOS/browser restrictions

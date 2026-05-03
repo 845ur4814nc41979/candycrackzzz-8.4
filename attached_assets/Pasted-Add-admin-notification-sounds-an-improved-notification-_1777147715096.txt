@@ -1,0 +1,385 @@
+Add admin notification sounds, an improved notification bell, and a basic site visitor/view counter for Candy CrackZZZ.
+
+Important:
+Do not break app loading, admin login, checkout, messages, orders, rewards, merch, products, or the existing notification system.
+Do not add paid APIs.
+Do not use Twilio, email, OpenAI, Google Maps, or any external paid service for this.
+This should work locally through the existing app/backend/browser setup.
+
+Main goals:
+1. When the admin dashboard is open, the notification bell should light up when something new happens.
+2. New orders, new messages, and general notifications should each have different chime sounds.
+3. Admin should be able to turn notification sounds on/off.
+4. Add a basic visitor/view counter so the admin can see how many people visit the site.
+5. Add basic analytics stats without using Google Analytics or any paid service.
+
+PART 1 — Notification bell and sounds
+
+Notification types:
+1. New order placed
+2. New message/contact form submission
+3. Everything else, such as reward activity, system alerts, low inventory, campaign alerts, or general notifications
+
+Sound behavior:
+- New order should have its own chime sound.
+- New message should have a different chime sound.
+- Other notifications should have a third different chime sound.
+- Sounds should only play for admin users, not customers.
+- Sounds should only play when notification sounds are enabled in admin settings.
+- Do not blast sounds repeatedly for old notifications.
+- Only play the sound once when a truly new unread notification arrives.
+- On first admin load, do not play sounds for all existing unread notifications.
+- Respect browser autoplay limits. Add an “Enable notification sounds” button or toggle that the admin clicks once to allow sounds.
+- Add “Test Order Sound,” “Test Message Sound,” and “Test General Sound” buttons in admin settings.
+
+Notification bell behavior:
+- The admin layout/header should show a notification bell.
+- The bell should light up, glow, or pulse when there are unread notifications.
+- Show unread count badge.
+- Clicking the bell opens a dropdown or panel showing recent notifications.
+- Notifications should be labeled by type:
+  - Order
+  - Message
+  - General
+- Each notification should show title, short body, type, and time.
+- Admin can mark one notification as read.
+- Admin can mark all as read.
+- Admin can delete a notification if that already fits the app pattern.
+- If a notification relates to an order, clicking it should take admin to Orders.
+- If it relates to a message, clicking it should take admin to Messages.
+- If it is general, clicking it can stay on the dashboard or go wherever makes sense.
+
+Existing backend:
+The backend already has notification endpoints in the Candy route system:
+- GET /api/cc/notifications
+- POST /api/cc/notifications/:id/read
+- POST /api/cc/notifications/read-all
+- DELETE /api/cc/notifications/:id
+
+Orders already create notifications through /api/cc/orders/notify.
+Messages already create notifications through /api/cc/messages.
+
+Use the existing notification system first. Do not create a second separate notification database unless absolutely necessary.
+
+Live update behavior:
+Do not add WebSockets yet.
+Use simple lightweight polling while the admin is logged in.
+
+Polling requirements:
+- Poll /api/cc/notifications every 10 to 15 seconds while the admin dashboard/admin layout is open.
+- Pause or slow down polling when the browser tab is hidden if easy.
+- Do not poll on customer pages.
+- Do not poll if admin is not logged in.
+- Avoid duplicate sounds by tracking the newest notification IDs already seen in the current browser session.
+- On first load, do not play sounds for all existing unread notifications. Only play sounds for notifications that arrive after the first notification fetch.
+
+Admin notification settings:
+Add notification sound settings to the Settings type/defaults and admin settings page:
+- notificationSoundsEnabled: boolean
+- notificationSoundVolume: number from 0 to 1
+- orderSoundEnabled: boolean
+- messageSoundEnabled: boolean
+- generalSoundEnabled: boolean
+- notificationPollingEnabled: boolean
+- notificationPollingSeconds: number, default 12
+- notificationBellEnabled: boolean
+
+Defaults:
+- notificationSoundsEnabled: false
+- notificationSoundVolume: 0.7
+- orderSoundEnabled: true
+- messageSoundEnabled: true
+- generalSoundEnabled: true
+- notificationPollingEnabled: true
+- notificationPollingSeconds: 12
+- notificationBellEnabled: true
+
+Sound files:
+Use simple built-in browser generated sounds with the Web Audio API instead of requiring audio files.
+
+Create three different tones:
+- Order: bright two-note chime
+- Message: softer single/double ping
+- General: short neutral beep
+
+Create:
+artifacts/candy-crackzzz/src/lib/notificationSounds.ts
+
+It should export:
+- playOrderNotificationSound(volume)
+- playMessageNotificationSound(volume)
+- playGeneralNotificationSound(volume)
+- unlockNotificationAudio()
+- canPlayNotificationAudio()
+
+Use Web Audio API oscillator tones so there are no external audio files required.
+
+Create or improve:
+artifacts/candy-crackzzz/src/components/admin/AdminNotificationBell.tsx
+
+It should:
+- fetch notifications
+- show unread count
+- glow/pulse if unread > 0
+- play the correct sound for new notifications after initial load
+- show dropdown/panel
+- support mark read, mark all read, and delete if already supported
+- navigate to Orders or Messages when clicked if relatedKind indicates order or message
+
+If AdminLayout already has a header area, place the bell there.
+If not, add it near the top-right of the admin layout without breaking mobile layout.
+
+Notification type sound mapping:
+- notification.type === "order" -> order sound
+- notification.type === "message" -> message sound
+- anything else -> general sound
+
+Browser permission/autoplay:
+Because browsers block sound until the user interacts, add a small admin prompt if sounds are enabled but audio is not unlocked:
+“Click to enable notification sounds.”
+
+Clicking it should call unlockNotificationAudio().
+After that, future notifications can chime.
+
+PART 2 — Basic visitor/view counter
+
+Add a simple site view counter and basic visitor analytics without using Google Analytics, paid APIs, or external tracking.
+
+Goal:
+Admin should be able to see how many people visit the site and which pages are getting views.
+
+Track:
+- total site views
+- unique visitor count estimate
+- views today
+- views this week
+- views this month
+- page path viewed, such as /, /menu, /merch, /cart, /contact
+- timestamp
+- referrer if available
+- user agent if available
+- rough device type: mobile, tablet, desktop
+- session/visitor id generated locally
+- do not collect sensitive personal info
+- do not store full IP address unless already required by the server; avoid IP tracking for now
+
+Privacy:
+- Do not track passwords, payment info, admin secrets, or private customer info.
+- Do not track admin pages by default, or mark them as admin/internal and exclude them from public visitor counts.
+- Do not expose analytics data to customers.
+- Only admin can view analytics.
+- Keep it simple and privacy-friendly.
+
+Visitor ID:
+On the customer frontend, generate or reuse a random visitor id stored in localStorage, like:
+cc_visitor_id
+
+Also generate a session id stored in sessionStorage, like:
+cc_session_id
+
+Do not use the customer phone number or email as visitor id.
+
+Frontend tracking:
+Create:
+artifacts/candy-crackzzz/src/lib/analytics.ts
+
+It should:
+- get or create visitor id
+- get or create session id
+- detect device type
+- send a view event to backend
+- ignore admin routes by default
+- avoid sending duplicate page views too rapidly for the same route
+
+Track route views when the customer navigates:
+- home
+- menu
+- product detail
+- merch
+- cart
+- rewards
+- contact
+- custom orders
+- seasonal
+- gallery
+- terms/privacy if useful
+
+Add a small tracking component:
+artifacts/candy-crackzzz/src/components/analytics/PageViewTracker.tsx
+
+Mount it near the app root inside App.tsx or PageLayout so it records route changes.
+
+Backend analytics:
+Add backend storage and routes for analytics.
+
+Use the existing storage style if possible. If the app is using Postgres, add a simple table through the workspace db package. If the app is using file fallback, store analytics in file mode too.
+
+Suggested backend routes:
+- POST /api/cc/analytics/view
+- GET /api/cc/analytics/summary
+- GET /api/cc/analytics/recent
+
+POST /api/cc/analytics/view should accept:
+- path
+- title if available
+- referrer
+- visitorId
+- sessionId
+- deviceType
+- timestamp client-side if useful, but server should use server timestamp too
+
+GET /api/cc/analytics/summary should be admin-only and return:
+- totalViews
+- uniqueVisitors
+- viewsToday
+- viewsThisWeek
+- viewsThisMonth
+- topPages
+- recentViews
+- deviceBreakdown
+- referrerBreakdown if available
+
+GET /api/cc/analytics/recent should be admin-only and return recent page views.
+
+Important:
+- Do not require login for POST /analytics/view because customers are public visitors.
+- Do require admin auth for GET analytics summary/recent.
+- Add basic rate limiting or de-duping to avoid one visitor refreshing 500 times and ruining counts. At minimum, ignore exact duplicate visitorId + path within 30 seconds.
+- Keep analytics data capped if using file storage, for example store the most recent 5,000 or 10,000 page views to avoid huge files.
+- If using Postgres, keep it simple.
+
+Admin analytics UI:
+Add a small “Site Views” or “Analytics” card on the admin dashboard.
+
+Show:
+- total views
+- unique visitors estimate
+- today’s views
+- this week’s views
+- this month’s views
+- top 5 pages
+- recent visits
+- mobile/desktop breakdown
+
+Optional:
+Add a fuller admin analytics section/page later, but for now a dashboard card is enough.
+
+Admin settings for analytics:
+Add settings fields:
+- analyticsEnabled: boolean
+- analyticsExcludeAdminRoutes: boolean
+- analyticsRetentionLimit: number
+- analyticsShowDashboardCard: boolean
+
+Defaults:
+- analyticsEnabled: true
+- analyticsExcludeAdminRoutes: true
+- analyticsRetentionLimit: 5000
+- analyticsShowDashboardCard: true
+
+Add these to Admin Settings if easy.
+
+Notification from analytics:
+Do not chime every time someone visits the site. That would get annoying.
+The visitor counter should update on dashboard load or refresh/poll if easy, but no sound for normal page views.
+
+Optional low-frequency alert:
+If you add any general notification for analytics, only do it for meaningful events later, such as first visit of the day or traffic milestone, and keep it disabled by default.
+
+PART 3 — Testing notification sounds
+
+Test these flows:
+
+1. Admin logged out:
+- No notification polling.
+- No bell.
+- No sound.
+
+2. Admin logged in:
+- Bell appears.
+- Existing unread notifications show count.
+- No sound plays on first load for old notifications.
+
+3. New order:
+- Submit a test order from customer checkout.
+- Admin bell lights up/pulses.
+- Unread count increases.
+- Order chime plays once.
+- Clicking notification opens or points to Orders.
+
+4. New message:
+- Submit a contact/message form.
+- Admin bell lights up/pulses.
+- Message chime plays once.
+- Clicking notification opens or points to Messages.
+
+5. General notification:
+- Create or simulate a general notification.
+- General sound plays once.
+- Bell updates.
+
+6. Mark read:
+- Mark notification as read.
+- Unread count decreases.
+- Bell stops pulsing when unread count is zero.
+
+7. Settings:
+- Turn sounds off.
+- Submit new order/message.
+- Bell updates but no sound plays.
+- Turn message sound off only.
+- Message notification does not play sound, but order still does.
+- Test sound buttons work.
+
+PART 4 — Testing visitor counter
+
+Test analytics:
+
+1. Visit home page as public customer.
+- Page view is recorded.
+- Admin analytics total increases.
+
+2. Visit /menu, /merch, /contact.
+- Top pages update.
+
+3. Refresh same page several times quickly.
+- Duplicate protection prevents obvious spam counts within the short duplicate window.
+
+4. Visit from mobile preview if possible.
+- Device type shows mobile or unknown/mobile.
+
+5. Visit admin pages.
+- Admin pages are excluded from public view counts if analyticsExcludeAdminRoutes is true.
+
+6. Admin dashboard:
+- Site Views card appears.
+- Total views show.
+- Unique visitor estimate shows.
+- Today/week/month counts show.
+- Recent visits show.
+
+7. Privacy:
+- No passwords, payment details, secret keys, or private customer data are collected.
+- Analytics endpoints for summary/recent require admin auth.
+
+PART 5 — Build checks
+
+Run:
+pnpm run typecheck
+pnpm run build
+
+Fix all TypeScript/build errors.
+
+At the end, give me a report:
+1. What files were changed.
+2. Where the notification bell was added.
+3. How often it polls.
+4. How each sound is mapped.
+5. Where I turn sounds on/off.
+6. How to test order/message/general sounds.
+7. Any browser sound limitations I need to know about.
+8. Where the site view counter appears.
+9. What analytics are tracked.
+10. What analytics are not tracked for privacy.
+11. Whether admin routes are excluded.
+12. Whether typecheck/build passed.
