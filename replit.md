@@ -106,6 +106,27 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - Font: Nunito (Google Fonts)
 - Wouter v3 routing: Link renders as `<a>` directly — never nest `<a>` inside Link
 
+## Admin Login (Default Credentials)
+
+The admin account is seeded automatically from environment variables. If `ADMIN_USERNAME` / `ADMIN_PASSWORD` are not set, the bootstrap defaults are:
+- **Username**: `owner`
+- **Password**: `CandyCrackzzzTemp1!`
+
+On first login the admin will see a banner prompting a password change — do this before going live via `/admin/account`. To set a custom username/password, add `ADMIN_USERNAME` and `ADMIN_PASSWORD` as Secrets in the Replit Secrets pane, then restart the workflow.
+
+## What Was Added (by Replit Agent)
+
+- **`/admin/analytics`** — Full-featured Analyticzz dashboard page with:
+  - Summary stat cards (Total Views, Unique Visitors, Today/Week/Month)
+  - Bar chart of top pages (recharts)
+  - Donut chart of device breakdown (Desktop / Mobile / Tablet)
+  - Page rankings table with visual progress bars
+  - Traffic sources / referrer breakdown
+  - Recent visits live table
+  - Refresh button
+- **Sidebar link** — "Analyticzz" entry added to the admin sidebar (visible to roles with `viewAnalytics` or `manageAnalytics` permission)
+- **Route** — `/admin/analytics` protected route added to `App.tsx`
+
 ## WHAT AUSTIN NEEDS TO DO NEXT
 
 The app is production-ready and runs gracefully without the optional secrets below — orders and messages will still save and appear in the admin inbox + bell. Add the optional secrets only when you want live email/SMS alerts.

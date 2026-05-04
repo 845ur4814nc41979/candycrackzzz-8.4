@@ -39,6 +39,7 @@ import AdminReviews from "@/pages/admin/AdminReviews";
 import AdminAccount from "@/pages/admin/AdminAccount";
 import AdminMessages from "@/pages/admin/AdminMessages";
 import AdminTeam from "@/pages/admin/AdminTeam";
+import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import PageViewTracker from "@/components/analytics/PageViewTracker";
 import StaffReferralTracker from "@/components/referrals/StaffReferralTracker";
 
@@ -114,6 +115,9 @@ function Router() {
       </Route>
       <Route path="/admin/team">
         {() => <ProtectedRoute requirePermission="manageAdmins"><AdminTeam /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/analytics">
+        {() => <ProtectedRoute requireAnyPermission={['viewAnalytics', 'manageAnalytics']}><AdminAnalytics /></ProtectedRoute>}
       </Route>
 
       <Route component={NotFound} />
