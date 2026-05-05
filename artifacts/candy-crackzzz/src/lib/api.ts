@@ -391,3 +391,58 @@ export function apiDirections(payload: DirectionsApiPayload) {
     body: JSON.stringify(payload),
   });
 }
+
+// -------- AI Tools --------
+
+export interface AiProductDescriptionPayload {
+  productName: string;
+  category?: string;
+  flavors?: string[];
+  notes?: string;
+  tone?: string;
+}
+
+export interface AiProductDescriptionResponse {
+  ok: boolean;
+  description?: string;
+  suggestedNames?: string[];
+  message?: string;
+}
+
+export interface AiPromoMessagePayload {
+  campaignType?: string;
+  audience?: string;
+  offer: string;
+  channel?: string;
+}
+
+export interface AiReferralMessagePayload {
+  type?: string;
+  context?: string;
+}
+
+export interface AiMessageResponse {
+  ok: boolean;
+  message?: string;
+}
+
+export function apiAiProductDescription(payload: AiProductDescriptionPayload) {
+  return apiRequest<AiProductDescriptionResponse>('/ai/product-description', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function apiAiPromoMessage(payload: AiPromoMessagePayload) {
+  return apiRequest<AiMessageResponse>('/ai/promo-message', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function apiAiReferralMessage(payload: AiReferralMessagePayload) {
+  return apiRequest<AiMessageResponse>('/ai/referral-message', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}

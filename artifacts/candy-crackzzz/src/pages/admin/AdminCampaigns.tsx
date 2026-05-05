@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2, Zap, Gift, Calendar, Star, Users, Trophy, Clock, RefreshCw } from 'lucide-react';
 import type { CampaignType, RewardsCampaign, RewardType, CampaignSendMethod } from '@/types';
+import AiGenerateButton from '@/components/admin/AiGenerateButton';
+import { apiAiPromoMessage } from '@/lib/api';
 
 const CAMPAIGN_TYPE_META: Record<CampaignType, { label: string; icon: typeof Zap; color: string; description: string }> = {
   birthday: { label: 'Birthday', icon: Calendar, color: 'bg-pink-500/20 text-pink-400 border-pink-500/40', description: 'Auto-sends a reward near a customer\'s birthday' },
@@ -433,14 +435,34 @@ export default function AdminCampaigns() {
             </div>
 
             <div className="space-y-2">
-              <Label className="font-bold">Message Template</Label>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label className="font-bold">Message Template</Label>
+                <AiGenerateButton
+                  generate={async () => {
+                    const sendMethod = form.sendMethods[0] ?? 'in-app';
+                    const res = await apiAiPromoMessage({
+                      campaignType: form.type,
+                      audience: 'customers',
+                      offer: form.name || `${form.rewardType} reward`,
+                      channel: sendMethod,
+                    });
+                    if (!res.ok) throw new Error(res.message ?? 'AI error');
+                    return res.message ?? '';
+                  }}
+                  onApply={text => set({ messageTemplate: text })}
+                  label="AI Message Idea"
+                  draftLabel="AI draft message — review and edit before saving"
+                  showCopy
+                  testId="ai-campaign-message"
+                />
+              </div>
               <Textarea
                 value={form.messageTemplate}
                 onChange={e => set({ messageTemplate: e.target.value })}
                 placeholder="Happy Birthday! Enjoy {reward} from Candy Crackzzz. Valid for {days} days."
                 className="bg-background min-h-[70px] resize-none text-sm"
               />
-              <p className="text-xs text-muted-foreground">Use {'{reward}'} for reward, {'{days}'} for expiration days.</p>
+              <p className="text-xs text-muted-foreground">Use {'{reward}'} for reward, {'{days}'} for expiration days. AI-generated text is a starting point — always review before sending.</p>
             </div>
 
             <div className="bg-muted/20 rounded-xl border border-border p-4 space-y-3">

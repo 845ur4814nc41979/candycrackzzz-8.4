@@ -476,6 +476,26 @@ export default function AdminSettings() {
           </SectionCard>
         </TabsContent>
 
+        <TabsContent value="helper" className="max-w-3xl">
+          <SectionCard title="AI Tools Setup" icon={<Info className="w-4 h-4" />}>
+            <div className="rounded-lg border border-secondary/40 bg-secondary/5 p-4 space-y-2">
+              <p className="text-sm font-black text-secondary uppercase tracking-wider">Optional: OpenAI AI Tools</p>
+              <p className="text-sm text-muted-foreground font-medium">
+                AI product descriptions, name suggestions, and campaign message drafts are available when you add an OpenAI API key.
+              </p>
+              <ol className="list-decimal list-inside text-xs text-muted-foreground space-y-1 pl-1">
+                <li>Go to <span className="font-bold text-foreground">Replit Secrets</span> (the lock icon in the left sidebar).</li>
+                <li>Add a secret named <span className="font-mono font-black text-primary">OPENAI_API_KEY</span> with your OpenAI API key.</li>
+                <li>Restart the <span className="font-bold text-foreground">API Server</span> workflow.</li>
+                <li>AI buttons will appear in the Product form and Campaign editor.</li>
+              </ol>
+              <p className="text-xs text-muted-foreground border-t border-border pt-2 mt-2">
+                AI tools are optional. The app works fully without them. AI-generated text is a draft — always review before publishing or sending.
+              </p>
+            </div>
+          </SectionCard>
+        </TabsContent>
+
         <TabsContent value="analytics" className="max-w-3xl">
           <SectionCard title="Privacy-Friendly Site Analytics" icon={<BarChart3 className="w-4 h-4" />}>
             <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 -mt-2">

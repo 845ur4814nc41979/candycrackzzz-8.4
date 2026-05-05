@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import ImageUpload from '@/components/ui/ImageUpload';
 import SmartDescriptionButton from '@/components/admin/SmartDescriptionButton';
+import AiGenerateButton from '@/components/admin/AiGenerateButton';
 import { generateProductDescription, generateShortProductDescription } from '@/lib/smartDescription';
+import { apiAiProductDescription } from '@/lib/api';
 import { Product, ProductCategory } from '@/types';
 
 const defaultProduct: Omit<Product, 'id' | 'createdAt'> = {
@@ -163,15 +165,34 @@ export default function AdminProductForm() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
                 <Label className="font-bold">Short Description (Card View)</Label>
-                <SmartDescriptionButton
-                  generate={() => generateShortProductDescription(formData)}
-                  onApply={text => handleChange('shortDescription', text.slice(0, 100))}
-                  disabled={!formData.name}
-                  label="Generate Smart Description"
-                  testId="smart-desc-product-short"
-                />
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <SmartDescriptionButton
+                    generate={() => generateShortProductDescription(formData)}
+                    onApply={text => handleChange('shortDescription', text.slice(0, 100))}
+                    disabled={!formData.name}
+                    label="Local Generate"
+                    testId="smart-desc-product-short"
+                  />
+                  <AiGenerateButton
+                    generate={async () => {
+                      const res = await apiAiProductDescription({
+                        productName: formData.name,
+                        category: formData.category,
+                        flavors: formData.flavorNotes ? [formData.flavorNotes] : [],
+                        notes: formData.colorThemeNotes || undefined,
+                      });
+                      if (!res.ok) throw new Error(res.message ?? 'AI error');
+                      return (res.description ?? '').slice(0, 100);
+                    }}
+                    onApply={text => handleChange('shortDescription', text.slice(0, 100))}
+                    disabled={!formData.name}
+                    label="AI Generate"
+                    draftLabel="AI short description — review before applying"
+                    testId="ai-desc-product-short"
+                  />
+                </div>
               </div>
               <Input 
                 required 
@@ -184,15 +205,34 @@ export default function AdminProductForm() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
                 <Label className="font-bold">Full Description (Detail View)</Label>
-                <SmartDescriptionButton
-                  generate={() => generateProductDescription(formData)}
-                  onApply={text => handleChange('description', text)}
-                  disabled={!formData.name}
-                  label="Generate Smart Description"
-                  testId="smart-desc-product-full"
-                />
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <SmartDescriptionButton
+                    generate={() => generateProductDescription(formData)}
+                    onApply={text => handleChange('description', text)}
+                    disabled={!formData.name}
+                    label="Local Generate"
+                    testId="smart-desc-product-full"
+                  />
+                  <AiGenerateButton
+                    generate={async () => {
+                      const res = await apiAiProductDescription({
+                        productName: formData.name,
+                        category: formData.category,
+                        flavors: formData.flavorNotes ? [formData.flavorNotes] : [],
+                        notes: formData.colorThemeNotes || undefined,
+                      });
+                      if (!res.ok) throw new Error(res.message ?? 'AI error');
+                      return res.description ?? '';
+                    }}
+                    onApply={text => handleChange('description', text)}
+                    disabled={!formData.name}
+                    label="AI Generate"
+                    draftLabel="AI full description — review before applying"
+                    testId="ai-desc-product-full"
+                  />
+                </div>
               </div>
               <Textarea 
                 required 
@@ -200,6 +240,35 @@ export default function AdminProductForm() {
                 onChange={e => handleChange('description', e.target.value)} 
                 className="bg-background min-h-[150px] font-medium resize-none"
               />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <Label className="font-bold">Suggest Product Names (AI)</Label>
+                <AiGenerateButton
+                  generate={async () => {
+                    const res = await apiAiProductDescription({
+                      productName: formData.name || 'candy treat',
+                      category: formData.category,
+                      flavors: formData.flavorNotes ? [formData.flavorNotes] : [],
+                    });
+                    if (!res.ok) throw new Error(res.message ?? 'AI error');
+                    const names = res.suggestedNames ?? [];
+                    if (!names.length) throw new Error('No name suggestions returned.');
+                    return names.join('\n');
+                  }}
+                  onApply={text => {
+                    const firstName = text.split('\n')[0]?.trim();
+                    if (firstName) handleChange('name', firstName);
+                  }}
+                  disabled={false}
+                  label="Suggest Namezzz"
+                  draftLabel="AI name ideas — pick one or edit, then Apply to set the name"
+                  applyLabel="Apply first name"
+                  showCopy
+                  testId="ai-suggest-names"
+                />
+              </div>
             </div>
           </div>
 

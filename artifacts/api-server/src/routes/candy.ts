@@ -1115,7 +1115,187 @@ router.post("/cc/directions", async (req, res) => {
   }
 });
 
-// -------- AI GENERATE --------
+// -------- AI — PRODUCT DESCRIPTION --------
+router.post("/cc/ai/product-description", async (req, res) => {
+  if (!(await ensureAdmin(req, res))) return;
+  try {
+    const { openAiChat, isOpenAiConfigured } = await import("../lib/openai.js");
+    if (!isOpenAiConfigured()) {
+      res.status(503).json({
+        ok: false,
+        message: "AI tools are not configured. Add OPENAI_API_KEY to Replit Secrets and restart the API server.",
+      });
+      return;
+    }
+
+    const body = (req.body ?? {}) as {
+      productName?: string;
+      category?: string;
+      flavors?: string[];
+      notes?: string;
+      tone?: string;
+    };
+    const productName = (body.productName ?? "").trim();
+    if (!productName) {
+      res.status(400).json({ ok: false, message: "productName is required." });
+      return;
+    }
+
+    const category = (body.category ?? "candy-coated fruit").trim();
+    const flavors = (body.flavors ?? []).filter(Boolean).join(", ");
+    const notes = (body.notes ?? "").trim();
+    const tone = (body.tone ?? "bold and fun, streetwear-inspired").trim();
+
+    const system =
+      "You are a copywriting assistant for Candy Crackzzz — a bold, streetwear-inspired candy-coated fruit brand. " +
+      "Write concise, energetic, on-brand copy. Never invent prices, medical claims, THC/cannabis, alcohol, or age-restricted content. " +
+      "Do not fabricate availability. Keep descriptions under 100 words.";
+
+    const userPrompt =
+      `Product name: ${productName}\n` +
+      `Category: ${category}\n` +
+      (flavors ? `Flavors: ${flavors}\n` : "") +
+      (notes ? `Admin notes: ${notes}\n` : "") +
+      `Tone: ${tone}\n\n` +
+      "Write:\n" +
+      "1. A short product description (1–3 punchy sentences, under 80 words).\n" +
+      "2. Three alternate product name ideas (comma-separated, on one line prefixed with 'Names:').\n" +
+      "Return ONLY these two sections, no extra commentary.";
+
+    const result = await openAiChat([
+      { role: "system", content: system },
+      { role: "user", content: userPrompt },
+    ], { maxTokens: 300, temperature: 0.85 });
+
+    if (!result.ok) {
+      res.status(502).json(result);
+      return;
+    }
+
+    const lines = result.text.split("\n").map(l => l.trim()).filter(Boolean);
+    const namesLine = lines.find(l => /^names?:/i.test(l)) ?? "";
+    const descLines = lines.filter(l => !/^names?:/i.test(l));
+    const description = descLines.join(" ").trim();
+    const suggestedNames = namesLine
+      .replace(/^names?:\s*/i, "")
+      .split(",")
+      .map(n => n.trim())
+      .filter(Boolean);
+
+    res.json({ ok: true, description, suggestedNames });
+  } catch (error) {
+    res.status(500).json({ ok: false, message: error instanceof Error ? error.message : "AI generation failed." });
+  }
+});
+
+// -------- AI — PROMO MESSAGE --------
+router.post("/cc/ai/promo-message", async (req, res) => {
+  if (!(await ensureAdmin(req, res))) return;
+  try {
+    const { openAiChat, isOpenAiConfigured } = await import("../lib/openai.js");
+    if (!isOpenAiConfigured()) {
+      res.status(503).json({
+        ok: false,
+        message: "AI tools are not configured. Add OPENAI_API_KEY to Replit Secrets and restart the API server.",
+      });
+      return;
+    }
+
+    const body = (req.body ?? {}) as {
+      campaignType?: string;
+      audience?: string;
+      offer?: string;
+      channel?: string;
+    };
+    const offer = (body.offer ?? "").trim();
+    if (!offer) {
+      res.status(400).json({ ok: false, message: "offer is required." });
+      return;
+    }
+
+    const campaignType = (body.campaignType ?? "promo").trim();
+    const audience = (body.audience ?? "customers").trim();
+    const channel = (body.channel ?? "sms").toLowerCase().trim();
+    const isSms = channel === "sms";
+
+    const system =
+      "You are a marketing copywriter for Candy Crackzzz, a bold candy-coated fruit brand. " +
+      "Write short, exciting promo messages. " +
+      "Safety rules: never include fake prices, medical claims, THC/cannabis, alcohol, or age-restricted content. " +
+      "Do not invent availability or terms not provided. " +
+      (isSms ? "SMS messages must be under 160 characters." : "Keep messages under 50 words.");
+
+    const userPrompt =
+      `Campaign type: ${campaignType}\n` +
+      `Audience: ${audience}\n` +
+      `Offer: ${offer}\n` +
+      `Channel: ${channel}\n\n` +
+      "Write one ready-to-send promotional message. Return only the message text, no labels or commentary.";
+
+    const result = await openAiChat([
+      { role: "system", content: system },
+      { role: "user", content: userPrompt },
+    ], { maxTokens: isSms ? 80 : 200, temperature: 0.85 });
+
+    if (!result.ok) {
+      res.status(502).json(result);
+      return;
+    }
+
+    res.json({ ok: true, message: result.text });
+  } catch (error) {
+    res.status(500).json({ ok: false, message: error instanceof Error ? error.message : "AI generation failed." });
+  }
+});
+
+// -------- AI — REFERRAL MESSAGE --------
+router.post("/cc/ai/referral-message", async (req, res) => {
+  if (!(await ensureAdmin(req, res))) return;
+  try {
+    const { openAiChat, isOpenAiConfigured } = await import("../lib/openai.js");
+    if (!isOpenAiConfigured()) {
+      res.status(503).json({
+        ok: false,
+        message: "AI tools are not configured. Add OPENAI_API_KEY to Replit Secrets and restart the API server.",
+      });
+      return;
+    }
+
+    const body = (req.body ?? {}) as {
+      type?: string;
+      context?: string;
+    };
+    const refType = (body.type ?? "customer_referral").trim();
+    const context = (body.context ?? "").trim();
+
+    const system =
+      "You are a copywriting assistant for Candy Crackzzz, a bold candy-coated fruit brand. " +
+      "Write energetic, friendly referral program messages. " +
+      "Never include medical claims, THC/cannabis, alcohol, or age-restricted content. " +
+      "Do not invent reward amounts or terms not provided. Keep messages under 60 words.";
+
+    const userPrompt =
+      `Referral program type: ${refType}\n` +
+      (context ? `Context: ${context}\n` : "") +
+      "\nWrite one clear, on-brand referral message the admin can use as a template. Return only the message text.";
+
+    const result = await openAiChat([
+      { role: "system", content: system },
+      { role: "user", content: userPrompt },
+    ], { maxTokens: 150, temperature: 0.8 });
+
+    if (!result.ok) {
+      res.status(502).json(result);
+      return;
+    }
+
+    res.json({ ok: true, message: result.text });
+  } catch (error) {
+    res.status(500).json({ ok: false, message: error instanceof Error ? error.message : "AI generation failed." });
+  }
+});
+
+// -------- AI GENERATE (legacy generic endpoint, kept for compatibility) --------
 router.post("/cc/ai/generate", async (req, res) => {
   if (!(await ensureAdmin(req, res))) return;
   try {
