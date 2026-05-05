@@ -18,7 +18,11 @@ export interface OpenAiChatError {
 export type OpenAiChatResponse = OpenAiChatResult | OpenAiChatError;
 
 export function getOpenAiApiKey(): string | null {
-  return process.env["OPENAI_API_KEY"] ?? null;
+  return (
+    process.env["OPENAI_API_KEY"] ??
+    process.env["OPEN_AI_KEY"] ??
+    null
+  );
 }
 
 export function isOpenAiConfigured(): boolean {
