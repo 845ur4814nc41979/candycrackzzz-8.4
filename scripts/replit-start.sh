@@ -4,20 +4,14 @@ set -euo pipefail
 # Candy CrackZZZ 8.4 — embedded Replit Preview starter
 #
 # PURPOSE: This script drives the *embedded* Replit Preview pane (the
-# webview inside the IDE).  It is NOT responsible for registering the
-# public picard.replit.dev URL — that is handled automatically by the
-# native Replit artifact workflow (artifacts/candy-crackzzz: web), which
-# Replit/goval starts in previewMode=true.  Do NOT manually start
-# Replit artifact-router from this script.
+# webview inside the IDE).  It is NOT responsible for starting Vite —
+# that is handled exclusively by the native Replit artifact workflow
+# (artifacts/candy-crackzzz: web) so the two do not conflict on port 5001.
 #
 # Port architecture:
 #   5000 = embedded Preview proxy/webview  (scripts/proxy-server.cjs)
-#   5001 = Vite dev server                 (behind the proxy; also serves public URL via artifact workflow)
+#   5001 = Vite dev server                 (started by artifacts/candy-crackzzz: web)
 #   3001 = Express/API server
-#
-# The proxy on 5000 binds immediately so Replit sees port 5000 open
-# quickly, then forwards HTTP/WebSocket to Vite on 5001.  This prevents
-# the white-screen / 502 that appears when port 5000 is slow to open.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -42,7 +36,7 @@ if curl -fsS "http://127.0.0.1:5000/" >/dev/null 2>&1 && \
   tail -f /dev/null
 fi
 
-# ── Free only the three app ports ────────────────────────────────────────────
+# ── Free the two ports this script owns (NOT 5001 — that belongs to Vite/artifact workflow) ──
 freeport() {
   local port="$1"
   local pids=""
@@ -57,12 +51,10 @@ freeport() {
 }
 freeport 3001
 freeport 5000
-freeport 5001
 
 # ── Cleanup on exit ──────────────────────────────────────────────────────────
 cleanup() {
   kill "${API_PID:-}"   2>/dev/null || true
-  kill "${VITE_PID:-}"  2>/dev/null || true
   kill "${PROXY_PID:-}" 2>/dev/null || true
 }
 trap 'cleanup; cleanup_lock' EXIT
@@ -89,10 +81,5 @@ echo "Starting API server on port 3001..."
 PORT=3001 API_PORT=3001 pnpm --filter @workspace/api-server run dev &
 API_PID=$!
 
-# ── Start Vite frontend on 5001 ──────────────────────────────────────────────
-echo "Starting Vite frontend on port 5001..."
-FRONTEND_PORT=5001 PORT=5001 API_PORT=3001 pnpm --filter @workspace/candy-crackzzz run dev &
-VITE_PID=$!
-
-# ── Keep alive while any child is alive ──────────────────────────────────────
-wait -n "$API_PID" "$VITE_PID" "$PROXY_PID"
+# ── Keep alive while children are alive ──────────────────────────────────────
+wait -n "$API_PID" "$PROXY_PID"
