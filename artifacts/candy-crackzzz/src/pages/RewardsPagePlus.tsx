@@ -24,6 +24,7 @@ import {
   normalizePhone,
   normalizeReferralCode,
 } from '@/lib/rewards';
+import { readStoredStaffReferralCode, calculateSignupBonus } from '@/lib/staffReferral';
 import ReferralShareButton from '@/components/referrals/ReferralShareButton';
 import CustomerDemoLink from '@/components/demo/CustomerDemoLink';
 import type { RewardProfile } from '@/types';
@@ -232,6 +233,18 @@ export default function RewardsPagePlus() {
         });
       } else {
         const id = `RWD-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8).toUpperCase()}`;
+        const staffRefCode = readStoredStaffReferralCode();
+        const signupBonus = staffRefCode
+          ? calculateSignupBonus({ staffCode: staffRefCode, settings })
+          : null;
+        const signupBonusFields = signupBonus
+          ? {
+              staffSignupBonusStatus: signupBonus.status,
+              staffSignupBonusAmount: signupBonus.amount,
+              staffSignupBonusNote: signupBonus.note,
+              staffSignupBonusCalculatedAt: new Date().toISOString(),
+            }
+          : {};
         saved = {
           id,
           customerName: name,
@@ -250,6 +263,8 @@ export default function RewardsPagePlus() {
           referredByCode: referralCode || undefined,
           successfulReferralCount: 0,
           lifetimeReferralPointsEarned: 0,
+          referredByStaffCode: staffRefCode || undefined,
+          ...signupBonusFields,
           rewardsHistory: [],
         };
         setRewardProfiles(prev => [saved, ...prev]);

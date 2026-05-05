@@ -192,6 +192,11 @@ export interface RewardProfile {
   lifetimeReferralPointsEarned?: number;
   /** Staff referral code that was captured when this customer joined rewards. Internal field — never shown to customers. */
   referredByStaffCode?: string;
+  /** Signup bonus owed to the staff member who referred this customer when they joined rewards. */
+  staffSignupBonusStatus?: 'none' | 'pending' | 'approved' | 'paid' | 'cancelled' | 'ineligible';
+  staffSignupBonusAmount?: number;
+  staffSignupBonusCalculatedAt?: string;
+  staffSignupBonusNote?: string;
   rewardsHistory: RewardsHistoryEntry[];
 }
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,14 +10,20 @@ import { useToast } from '@/hooks/use-toast';
 import { roleLabels } from '@/lib/permissions';
 import {
   buildStaffReferralLink,
+  calculateSignupBonus,
+  calculateStaffReferralBonus,
   getStaffReferralSettings,
   getStaffReferralStats,
   staffReferralShareText,
   staffReferralCodeForUser,
   normalizeStaffReferralCode,
+  profileStaffReferralCode,
+  orderEmployeeReferralCode,
   type StaffReferralUser,
 } from '@/lib/staffReferral';
-import { Copy, DollarSign, Gift, Link2, Share2, Users, Banknote } from 'lucide-react';
+import { normalizePhone } from '@/lib/rewards';
+import { Copy, DollarSign, Gift, Link2, RefreshCw, Share2, Users, Banknote } from 'lucide-react';
+import type { OrderRequest, RewardProfile } from '@/types';
 
 const currency = (value: number) => `$${value.toFixed(2)}`;
 
@@ -75,10 +81,15 @@ const BONUS_STATUS_STYLES: Record<string, string> = {
   cancelled: 'bg-destructive text-destructive-foreground',
 };
 
+type BonusQueueItem =
+  | { kind: 'order'; order: OrderRequest }
+  | { kind: 'signup'; profile: RewardProfile; staffCode: string };
+
 export default function AdminStaffReferralzzz() {
-  const { settings, setSettings, orders, setOrders, rewardProfiles } = useAppContext();
+  const { settings, setSettings, orders, setOrders, rewardProfiles, setRewardProfiles } = useAppContext();
   const { adminUsers, currentUser } = useAuth();
   const { toast } = useToast();
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const staffSettings = getStaffReferralSettings(settings);
 
   const setStaffSetting = (field: string, value: unknown) => {
@@ -105,20 +116,115 @@ export default function AdminStaffReferralzzz() {
     return acc;
   }, { signups: 0, completed: 0, pending: 0, approved: 0, paid: 0, lifetime: 0 });
 
-  const updateStaffBonus = (orderId: string, newBonusStatus: 'pending' | 'approved' | 'paid' | 'cancelled') => {
+  const updateOrderStaffBonus = (orderId: string, newBonusStatus: 'pending' | 'approved' | 'paid' | 'cancelled') => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, employeeReferralBonusStatus: newBonusStatus } : o));
   };
 
-  // Orders with actionable staff bonuses (pending or approved, with a positive amount)
-  const actionableBonusOrders = useMemo(
-    () => orders.filter(o =>
-      o.employeeReferralCodeUsed &&
-      o.employeeReferralBonusCalculatedAt &&
-      (o.employeeReferralBonusAmount ?? 0) > 0 &&
-      (o.employeeReferralBonusStatus === 'pending' || o.employeeReferralBonusStatus === 'approved'),
-    ),
-    [orders],
-  );
+  const updateSignupBonusStatus = (profileId: string, newStatus: 'pending' | 'approved' | 'paid' | 'cancelled') => {
+    setRewardProfiles(prev => prev.map(p => p.id === profileId ? { ...p, staffSignupBonusStatus: newStatus } : p));
+  };
+
+  // Unified bonus queue: orders with actionable order bonuses + profiles with actionable signup bonuses
+  const actionableBonusItems = useMemo<BonusQueueItem[]>(() => {
+    const orderItems: BonusQueueItem[] = orders
+      .filter(o =>
+        orderEmployeeReferralCode(o) &&
+        o.employeeReferralBonusCalculatedAt &&
+        (o.employeeReferralBonusAmount ?? 0) > 0 &&
+        (o.employeeReferralBonusStatus === 'pending' || o.employeeReferralBonusStatus === 'approved'),
+      )
+      .map(o => ({ kind: 'order' as const, order: o }));
+
+    const signupItems: BonusQueueItem[] = rewardProfiles
+      .filter(p =>
+        profileStaffReferralCode(p) &&
+        p.staffSignupBonusCalculatedAt &&
+        (p.staffSignupBonusAmount ?? 0) > 0 &&
+        (p.staffSignupBonusStatus === 'pending' || p.staffSignupBonusStatus === 'approved'),
+      )
+      .map(p => ({ kind: 'signup' as const, profile: p, staffCode: profileStaffReferralCode(p) }));
+
+    return [...signupItems, ...orderItems];
+  }, [orders, rewardProfiles]);
+
+  // Backfill / Recalculate: re-run bonus calculation for existing data where bonuses are missing or were
+  // calculated when the program was disabled. Does NOT overwrite valid pending/approved/paid bonuses.
+  const handleRecalculate = () => {
+    setIsRecalculating(true);
+    let ordersFixed = 0;
+    let signupsFixed = 0;
+
+    // --- Fix order bonuses ---
+    setOrders(prev => prev.map(order => {
+      const staffCode = normalizeStaffReferralCode(order.employeeReferralCodeUsed || '');
+      if (!staffCode || order.status !== 'completed') return order;
+
+      // Skip if the bonus is already valid (pending/approved/paid with a positive amount)
+      const existingStatus = order.employeeReferralBonusStatus;
+      const existingAmount = order.employeeReferralBonusAmount ?? 0;
+      if ((existingStatus === 'pending' || existingStatus === 'approved' || existingStatus === 'paid') && existingAmount > 0) {
+        return order;
+      }
+
+      // Determine if this is the customer's first completed staff-referral order
+      const customerPhone = normalizePhone(order.phone);
+      const isFirstCompletedOrder = !prev.some(
+        o =>
+          o.id !== order.id &&
+          normalizePhone(o.phone) === customerPhone &&
+          normalizeStaffReferralCode(o.employeeReferralCodeUsed || '') === staffCode &&
+          o.status === 'completed' &&
+          !!o.employeeReferralBonusCalculatedAt &&
+          (o.employeeReferralBonusStatus === 'pending' || o.employeeReferralBonusStatus === 'approved' || o.employeeReferralBonusStatus === 'paid'),
+      );
+
+      const bonus = calculateStaffReferralBonus({
+        order: { ...order, status: 'completed' },
+        settings,
+        isFirstCompletedOrder,
+      });
+
+      if (bonus.amount > 0) ordersFixed++;
+
+      return {
+        ...order,
+        employeeReferralBonusAmount: bonus.amount,
+        employeeReferralBonusStatus: bonus.status,
+        employeeReferralBonusNote: bonus.note,
+        employeeReferralBonusCalculatedAt: new Date().toISOString(),
+      };
+    }));
+
+    // --- Fix signup bonuses ---
+    setRewardProfiles(prev => prev.map(profile => {
+      const staffCode = profileStaffReferralCode(profile);
+      if (!staffCode) return profile;
+
+      // Skip if already has a valid signup bonus
+      const existingStatus = profile.staffSignupBonusStatus;
+      const existingAmount = profile.staffSignupBonusAmount ?? 0;
+      if ((existingStatus === 'pending' || existingStatus === 'approved' || existingStatus === 'paid') && existingAmount > 0) {
+        return profile;
+      }
+
+      const bonus = calculateSignupBonus({ staffCode, settings });
+      if (bonus.amount > 0) signupsFixed++;
+
+      return {
+        ...profile,
+        staffSignupBonusStatus: bonus.status,
+        staffSignupBonusAmount: bonus.amount,
+        staffSignupBonusNote: bonus.note,
+        staffSignupBonusCalculatedAt: new Date().toISOString(),
+      };
+    }));
+
+    setIsRecalculating(false);
+    toast({
+      title: 'Recalculation complete',
+      description: `Fixed ${ordersFixed} order bonus${ordersFixed !== 1 ? 'es' : ''} and ${signupsFixed} signup bonus${signupsFixed !== 1 ? 'es' : ''}.`,
+    });
+  };
 
   const copy = async (text: string, label: string) => {
     try {
@@ -153,11 +259,22 @@ export default function AdminStaffReferralzzz() {
               Adjustable Candy Crew Bonus tracking. Staff can share their own link, and Builder/Admin can review pending, approved, and paid bonus cash manually.
             </p>
           </div>
-          {currentUser && (
-            <Button variant="outline" className="font-black uppercase tracking-wider" onClick={() => void copy(staffReferralCodeForUser(currentUser as StaffReferralUser), 'Your code')}>
-              <Gift className="w-4 h-4 mr-2" /> My Code
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              className="font-black uppercase tracking-wider"
+              onClick={handleRecalculate}
+              disabled={isRecalculating}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
+              Recalculate Bonuszzz
             </Button>
-          )}
+            {currentUser && (
+              <Button variant="outline" className="font-black uppercase tracking-wider" onClick={() => void copy(staffReferralCodeForUser(currentUser as StaffReferralUser), 'Your code')}>
+                <Gift className="w-4 h-4 mr-2" /> My Code
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -244,24 +361,72 @@ export default function AdminStaffReferralzzz() {
             <Banknote className="w-5 h-5 text-yellow-500" />
             <div>
               <h2 className="text-xl font-black uppercase tracking-wider">Bonus Queuezzz</h2>
-              <p className="text-sm text-muted-foreground font-bold mt-0.5">Orders with a pending or approved staff bonus waiting for action.</p>
+              <p className="text-sm text-muted-foreground font-bold mt-0.5">Pending or approved staff bonuses waiting for action — signup bonuses and order bonuses.</p>
             </div>
-            {actionableBonusOrders.length > 0 && (
-              <span className="ml-auto bg-yellow-500 text-black text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">{actionableBonusOrders.length} pending</span>
+            {actionableBonusItems.length > 0 && (
+              <span className="ml-auto bg-yellow-500 text-black text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">{actionableBonusItems.length} pending</span>
             )}
           </div>
-          {actionableBonusOrders.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground font-bold">No pending bonuses. They appear here when a referred customer's order is completed.</div>
+          {actionableBonusItems.length === 0 ? (
+            <div className="p-6 text-sm text-muted-foreground font-bold">
+              No pending bonuses. If you expect bonuses here, click <span className="text-foreground">Recalculate Bonuszzz</span> to backfill from existing data.
+            </div>
           ) : (
             <div className="divide-y divide-border">
-              {actionableBonusOrders.map(order => {
+              {actionableBonusItems.map(item => {
+                if (item.kind === 'signup') {
+                  const { profile, staffCode } = item;
+                  const staffUser = referralUsers.find(u => {
+                    const uCode = normalizeStaffReferralCode(staffReferralCodeForUser(u as StaffReferralUser));
+                    return uCode === normalizeStaffReferralCode(staffCode);
+                  });
+                  return (
+                    <div key={`signup-${profile.id}`} className="p-4 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-4 items-center">
+                      <div>
+                        <div className="font-black">{profile.customerName}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{profile.phone}</div>
+                        <div className="text-xs font-bold text-secondary mt-1">Signup Bonus</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-1">Staff Member</div>
+                        <div className="font-black">{staffUser?.username ?? staffCode}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-black tracking-widest text-primary">{staffCode}</span>
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${BONUS_STATUS_STYLES[profile.staffSignupBonusStatus ?? 'none']}`}>
+                            {profile.staffSignupBonusStatus ?? 'none'}
+                          </span>
+                        </div>
+                        <div className="text-lg font-black mt-1">${(profile.staffSignupBonusAmount ?? 0).toFixed(2)}</div>
+                        {profile.staffSignupBonusNote && <div className="text-xs text-muted-foreground mt-0.5">{profile.staffSignupBonusNote}</div>}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.staffSignupBonusStatus === 'pending' && (
+                          <Button size="sm" className="font-black bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => updateSignupBonusStatus(profile.id, 'approved')}>
+                            Approve
+                          </Button>
+                        )}
+                        {profile.staffSignupBonusStatus === 'approved' && (
+                          <Button size="sm" className="font-black bg-primary text-primary-foreground" onClick={() => updateSignupBonusStatus(profile.id, 'paid')}>
+                            Mark Paid
+                          </Button>
+                        )}
+                        <Button size="sm" variant="destructive" className="font-black" onClick={() => updateSignupBonusStatus(profile.id, 'cancelled')}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // kind === 'order'
+                const { order } = item;
                 const staffCode = normalizeStaffReferralCode(order.employeeReferralCodeUsed ?? '');
                 const staffUser = referralUsers.find(u => {
                   const uCode = normalizeStaffReferralCode(staffReferralCodeForUser(u as StaffReferralUser));
                   return uCode === staffCode;
                 });
                 return (
-                  <div key={order.id} className="p-4 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-4 items-center">
+                  <div key={`order-${order.id}`} className="p-4 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-4 items-center">
                     <div>
                       <div className="font-black">{order.customerName}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">{order.phone} · {new Date(order.createdAt).toLocaleDateString()}</div>
@@ -281,16 +446,16 @@ export default function AdminStaffReferralzzz() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {order.employeeReferralBonusStatus === 'pending' && (
-                        <Button size="sm" className="font-black bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => updateStaffBonus(order.id, 'approved')}>
+                        <Button size="sm" className="font-black bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => updateOrderStaffBonus(order.id, 'approved')}>
                           Approve
                         </Button>
                       )}
                       {order.employeeReferralBonusStatus === 'approved' && (
-                        <Button size="sm" className="font-black bg-primary text-primary-foreground" onClick={() => updateStaffBonus(order.id, 'paid')}>
+                        <Button size="sm" className="font-black bg-primary text-primary-foreground" onClick={() => updateOrderStaffBonus(order.id, 'paid')}>
                           Mark Paid
                         </Button>
                       )}
-                      <Button size="sm" variant="destructive" className="font-black" onClick={() => updateStaffBonus(order.id, 'cancelled')}>
+                      <Button size="sm" variant="destructive" className="font-black" onClick={() => updateOrderStaffBonus(order.id, 'cancelled')}>
                         Cancel
                       </Button>
                     </div>

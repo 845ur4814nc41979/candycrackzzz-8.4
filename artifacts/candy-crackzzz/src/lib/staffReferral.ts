@@ -172,6 +172,32 @@ function money(value: unknown): number {
   return Number.isFinite(n) ? Math.max(0, n) : 0;
 }
 
+/** Calculate the signup bonus for a staff member when a referred customer joins rewards. */
+export function calculateSignupBonus(args: {
+  staffCode: string;
+  settings: unknown;
+}): { amount: number; status: StaffReferralBonusStatus; note: string } {
+  const s = getStaffReferralSettings(args.settings);
+  if (!s.enableStaffReferralProgram) {
+    return { amount: 0, status: 'none' as StaffReferralBonusStatus, note: 'Staff Referralzzz is disabled.' };
+  }
+  if (!s.staffReferralAllowSignupBonus) {
+    return { amount: 0, status: 'ineligible' as StaffReferralBonusStatus, note: 'Signup bonus is disabled in settings.' };
+  }
+  if (!args.staffCode) {
+    return { amount: 0, status: 'ineligible' as StaffReferralBonusStatus, note: 'No staff code attached.' };
+  }
+  const amount = money(s.staffReferralFixedSignupBonus);
+  if (amount <= 0) {
+    return { amount: 0, status: 'ineligible' as StaffReferralBonusStatus, note: 'Fixed signup bonus is $0.00.' };
+  }
+  return {
+    amount,
+    status: (s.staffReferralApprovalRequired ? 'pending' : 'approved') as StaffReferralBonusStatus,
+    note: `$${amount.toFixed(2)} fixed signup bonus`,
+  };
+}
+
 export function calculateStaffReferralBonus(args: {
   order: OrderRequest;
   settings: unknown;
@@ -246,9 +272,24 @@ export function getStaffReferralStats(args: {
   const referredProfiles = (args.rewardProfiles ?? []).filter((profile) => profileStaffReferralCode(profile) === code);
   const referralOrders = args.orders.filter((order) => orderEmployeeReferralCode(order) === code);
   const completedReferralOrders = referralOrders.filter((order) => order.status === 'completed');
-  const sumByStatus = (status: StaffReferralBonusStatus) => referralOrders.reduce((sum, order) => {
+
+  const orderSumByStatus = (status: StaffReferralBonusStatus) => referralOrders.reduce((sum, order) => {
     const orderStatus = ((order as any).employeeReferralBonusStatus || 'none') as StaffReferralBonusStatus;
     return orderStatus === status ? sum + money((order as any).employeeReferralBonusAmount) : sum;
+  }, 0);
+
+  const signupSumByStatus = (status: StaffReferralBonusStatus) => referredProfiles.reduce((sum, profile) => {
+    const bonusStatus = ((profile as any).staffSignupBonusStatus || 'none') as StaffReferralBonusStatus;
+    return bonusStatus === status ? sum + money((profile as any).staffSignupBonusAmount) : sum;
+  }, 0);
+
+  const orderLifetime = referralOrders.reduce((sum, order) => {
+    const s = ((order as any).employeeReferralBonusStatus || 'none') as StaffReferralBonusStatus;
+    return ['pending', 'approved', 'paid'].includes(s) ? sum + money((order as any).employeeReferralBonusAmount) : sum;
+  }, 0);
+  const signupLifetime = referredProfiles.reduce((sum, profile) => {
+    const s = ((profile as any).staffSignupBonusStatus || 'none') as StaffReferralBonusStatus;
+    return ['pending', 'approved', 'paid'].includes(s) ? sum + money((profile as any).staffSignupBonusAmount) : sum;
   }, 0);
 
   return {
@@ -256,10 +297,11 @@ export function getStaffReferralStats(args: {
     link: buildStaffReferralLink(args.user),
     signupCount: referredProfiles.length,
     completedOrderCount: completedReferralOrders.length,
-    pendingBonus: sumByStatus('pending'),
-    approvedBonus: sumByStatus('approved'),
-    paidBonus: sumByStatus('paid'),
-    lifetimeBonus: referralOrders.reduce((sum, order) => sum + money((order as any).employeeReferralBonusAmount), 0),
+    pendingBonus: orderSumByStatus('pending') + signupSumByStatus('pending'),
+    approvedBonus: orderSumByStatus('approved') + signupSumByStatus('approved'),
+    paidBonus: orderSumByStatus('paid') + signupSumByStatus('paid'),
+    lifetimeBonus: orderLifetime + signupLifetime,
     orders: referralOrders,
+    referredProfiles,
   };
 }

@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { calculateEstimatedPoints, ensureRewardProfileReferralCode, generateReferralCode, listRewardTiers, normalizePhone, normalizeReferralCode } from '@/lib/rewards';
 import { apiNotifyOrder } from '@/lib/api';
 import ReferralShareButton from '@/components/referrals/ReferralShareButton';
-import { readStoredStaffReferralCode, captureStaffReferralFromCurrentUrl } from '@/lib/staffReferral';
+import { readStoredStaffReferralCode, captureStaffReferralFromCurrentUrl, calculateSignupBonus } from '@/lib/staffReferral';
 import CustomerDemoLink from '@/components/demo/CustomerDemoLink';
 
 export default function CartPage() {
@@ -216,6 +216,17 @@ export default function CartPage() {
         setRewardProfiles(prev => {
           const existingProfile = prev.find(profile => normalizePhone(profile.phone) === normalizedPhone);
           if (!existingProfile) {
+            const signupBonus = storedStaffRefCode
+              ? calculateSignupBonus({ staffCode: storedStaffRefCode, settings })
+              : null;
+            const signupBonusFields = signupBonus
+              ? {
+                  staffSignupBonusStatus: signupBonus.status,
+                  staffSignupBonusAmount: signupBonus.amount,
+                  staffSignupBonusNote: signupBonus.note,
+                  staffSignupBonusCalculatedAt: new Date().toISOString(),
+                }
+              : {};
             return [{
               id: `RWD-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8).toUpperCase()}`,
               customerName: formData.customerName,
@@ -232,6 +243,7 @@ export default function CartPage() {
               successfulReferralCount: 0,
               lifetimeReferralPointsEarned: 0,
               referredByStaffCode: storedStaffRefCode || undefined,
+              ...signupBonusFields,
               rewardsHistory: [],
             }, ...prev];
           }
