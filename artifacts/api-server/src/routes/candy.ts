@@ -1006,6 +1006,115 @@ router.post("/cc/notifications/test-sms", async (req, res) => {
   }
 });
 
+// -------- DIRECTIONS --------
+router.post("/cc/directions", async (req, res) => {
+  if (!(await ensureAdmin(req, res))) return;
+  try {
+    const body = (req.body ?? {}) as {
+      origin?: string;
+      originAddress?: string;
+      destination?: string;
+      mode?: string;
+    };
+
+    const destination = (body.destination ?? "").trim();
+    if (!destination) {
+      res.status(400).json({ ok: false, message: "destination is required." });
+      return;
+    }
+
+    const rawOrigin = (body.origin ?? "").trim();
+    const rawOriginAddress = (body.originAddress ?? "").trim();
+    const originRaw = rawOrigin || rawOriginAddress;
+
+    if (!originRaw) {
+      res.status(400).json({ ok: false, message: "origin or originAddress is required." });
+      return;
+    }
+
+    const mode = (body.mode ?? "driving").toLowerCase();
+    const originUsed: "current_location" | "business_address" = rawOrigin
+      ? "current_location"
+      : "business_address";
+
+    const encodedOrigin = encodeURIComponent(originRaw);
+    const encodedDest = encodeURIComponent(destination);
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodedOrigin}&destination=${encodedDest}&travelmode=${mode}`;
+
+    const apiKey = process.env["GOOGLE_MAPS_API_KEY"];
+    if (!apiKey) {
+      res.json({
+        ok: false,
+        message: "Google Maps API key is not configured. The directions link is still available.",
+        mapsUrl,
+        originUsed,
+        provider: "google",
+      });
+      return;
+    }
+
+    const params = new URLSearchParams({
+      origin: originRaw,
+      destination,
+      mode,
+      key: apiKey,
+    });
+
+    const apiResponse = await fetch(
+      `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`,
+    );
+
+    if (!apiResponse.ok) {
+      res.json({
+        ok: false,
+        message: "Google Maps API request failed. The directions link is still available.",
+        mapsUrl,
+        originUsed,
+        provider: "google",
+      });
+      return;
+    }
+
+    const data = await apiResponse.json() as {
+      status: string;
+      routes?: {
+        legs?: {
+          distance?: { text: string; value: number };
+          duration?: { text: string; value: number };
+        }[];
+      }[];
+    };
+
+    if (data.status !== "OK" || !data.routes?.length) {
+      res.json({
+        ok: false,
+        message: `Route not found (${data.status}). The directions link is still available.`,
+        mapsUrl,
+        originUsed,
+        provider: "google",
+      });
+      return;
+    }
+
+    const leg = data.routes[0]?.legs?.[0];
+    res.json({
+      ok: true,
+      distanceText: leg?.distance?.text ?? "",
+      distanceMeters: leg?.distance?.value ?? 0,
+      durationText: leg?.duration?.text ?? "",
+      durationSeconds: leg?.duration?.value ?? 0,
+      originUsed,
+      mapsUrl,
+      provider: "google",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: error instanceof Error ? error.message : "Directions request failed.",
+    });
+  }
+});
+
 // -------- AI GENERATE --------
 router.post("/cc/ai/generate", async (req, res) => {
   if (!(await ensureAdmin(req, res))) return;

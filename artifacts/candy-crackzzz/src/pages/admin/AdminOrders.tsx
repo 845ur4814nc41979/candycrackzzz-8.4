@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { OrderStatus } from '@/types';
 import { ChevronDown, Package, User, Calendar, MapPin, CreditCard, StickyNote, Banknote } from 'lucide-react';
+import DirectionsPanel from '@/components/admin/DirectionsPanel';
 import { awardCompletedOrderRewards } from '@/lib/rewards';
 import { calculateStaffReferralBonus, getStaffReferralSettings, normalizeStaffReferralCode } from '@/lib/staffReferral';
 import { normalizePhone } from '@/lib/rewards';
@@ -222,7 +223,18 @@ export default function AdminOrders() {
                       <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted-foreground mb-2"><Calendar className="w-4 h-4" /> Logistics</div>
                       <Badge variant="outline" className="uppercase text-[10px] font-black tracking-wider">{order.pickupOrDelivery}</Badge>
                       <div className="text-sm font-bold text-secondary">{new Date(order.requestedDate).toLocaleDateString()} @ {order.requestedTime}</div>
-                      {order.pickupOrDelivery === 'delivery' && order.deliveryAddress && <div className="flex items-start gap-1 text-xs text-muted-foreground"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />{order.deliveryAddress}</div>}
+                      {order.pickupOrDelivery === 'delivery' && order.deliveryAddress && (
+                        <div>
+                          <div className="flex items-start gap-1 text-xs text-muted-foreground mb-1">
+                            <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />{order.deliveryAddress}
+                          </div>
+                          <DirectionsPanel
+                            deliveryAddress={order.deliveryAddress}
+                            businessAddress={(settings.serviceArea || settings.businessAddress || settings.businessName || '').trim()}
+                            orderId={order.id}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 

@@ -363,3 +363,31 @@ export function apiGetRecentAnalyticsViews(limit = 50) {
 // been removed from the client to guarantee no OPENAI_API_KEY dependency.
 // The backend route still exists in artifacts/api-server but is no longer
 // reachable from the UI.
+
+// -------- Directions --------
+
+export interface DirectionsApiPayload {
+  origin?: string;
+  originAddress?: string;
+  destination: string;
+  mode?: string;
+}
+
+export interface DirectionsApiResponse {
+  ok: boolean;
+  distanceText?: string;
+  distanceMeters?: number;
+  durationText?: string;
+  durationSeconds?: number;
+  originUsed?: 'current_location' | 'business_address';
+  mapsUrl?: string;
+  provider?: string;
+  message?: string;
+}
+
+export function apiDirections(payload: DirectionsApiPayload) {
+  return apiRequest<DirectionsApiResponse>('/directions', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}

@@ -3,11 +3,12 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { useAppContext } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Truck, MapPin, Phone, ExternalLink, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Truck, MapPin, Phone, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import type { OrderRequest, OrderStatus } from '@/types';
-import { buildGoogleMapsDirectionsUrl, hasUsableAddress } from '@/lib/directions';
+import { hasUsableAddress } from '@/lib/directions';
 import { userHasPermission } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
+import DirectionsPanel from '@/components/admin/DirectionsPanel';
 
 type DeliveryFilter = 'active' | 'in-progress' | 'delivered' | 'all';
 
@@ -145,11 +146,6 @@ export default function AdminDeliveries() {
           {filteredDeliveries.map(order => {
             const address = (order.deliveryAddress || '').trim();
             const hasAddress = hasUsableAddress(address);
-            const directionsUrl = hasAddress && businessAddress
-              ? buildGoogleMapsDirectionsUrl(businessAddress, address)
-              : hasAddress
-                ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
-                : '';
             const noteValue = noteDrafts[order.id] ?? order.notes ?? '';
 
             return (
@@ -176,18 +172,14 @@ export default function AdminDeliveries() {
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
                       <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <div>
+                      <div className="flex-1">
                         <div className="font-bold">{hasAddress ? address : 'No address provided'}</div>
-                        {directionsUrl && (
-                          <a
-                            href={directionsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-primary font-black uppercase tracking-wider text-xs mt-1 hover:underline"
-                            data-testid={`link-directions-${order.id}`}
-                          >
-                            Open Directions <ExternalLink className="w-3 h-3" />
-                          </a>
+                        {hasAddress && (
+                          <DirectionsPanel
+                            deliveryAddress={address}
+                            businessAddress={businessAddress}
+                            orderId={order.id}
+                          />
                         )}
                       </div>
                     </div>
