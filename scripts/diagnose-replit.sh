@@ -5,9 +5,11 @@ echo "Candy CrackZZZ 8.4 Replit Diagnostic"
 echo "====================================="
 echo
 echo "Expected architecture:"
-echo "  5000 = embedded Replit Preview proxy/webview"
-echo "  5001 = Vite frontend / artifact web workflow / public URL"
-echo "  3001 = API server"
+echo "  5000 = Start application embedded Preview proxy"
+echo "  5001 = artifact web workflow Vite frontend"
+echo "  3001 = API artifact workflow"
+echo
+echo "Do not fix 5001/3001 failures by adding Vite/API startup to scripts/replit-start.sh. Start/restart the artifact workflows instead."
 echo
 
 section() {
@@ -39,7 +41,13 @@ check_url "embedded Preview proxy/webview" "http://127.0.0.1:5000/"
 check_url "artifact/Vite frontend" "http://127.0.0.1:5001/"
 check_url "API bootstrap" "http://127.0.0.1:3001/api/cc/bootstrap"
 
-section "5. Public URL check"
+section "5. Failure interpretation"
+echo "If 5000 works but 5001 fails: Start application proxy is running but frontend artifact workflow is down."
+echo "If 5001 works but 3001 fails: frontend is running but API artifact workflow is down."
+echo "If Start application launches Vite/API, that is wrong."
+echo "If artifact workflow fails due to port in use, check whether Start application was incorrectly changed to launch Vite/API."
+
+section "6. Public URL check"
 if [ -n "${REPLIT_DEV_DOMAIN:-}" ]; then
   check_url "public Replit dev URL" "https://${REPLIT_DEV_DOMAIN}/"
 else
@@ -47,10 +55,11 @@ else
   echo "Manually test the public picard.replit.dev URL from the browser."
 fi
 
-section "6. Artifact port alignment"
+section "7. Artifact port alignment"
 echo "--- Frontend artifact ---"
 grep -n "localPort\|PORT\|FRONTEND_PORT\|API_PORT" artifacts/candy-crackzzz/.replit-artifact/artifact.toml || true
 echo
+
 echo "--- API artifact ---"
 grep -n "localPort\|PORT\|API_PORT" artifacts/api-server/.replit-artifact/artifact.toml || true
 
@@ -59,14 +68,14 @@ echo "Expected:"
 echo "  frontend artifact localPort/PORT/FRONTEND_PORT = 5001"
 echo "  api artifact localPort/PORT/API_PORT = 3001"
 
-section "7. Startup script checks"
+section "8. Startup script checks"
 echo "Manual artifact-router startup should NOT be active in scripts/replit-start.sh."
-grep -n "REPLIT_ARTIFACT_ROUTER\|artifact-router" scripts/replit-start.sh | grep -v '^[0-9]*:#' || true
+grep -n "REPLIT_ARTIFACT_ROUTER\|artifact-router\|pnpm --filter @workspace/candy-crackzzz run dev\|pnpm --filter @workspace/api-server run dev" scripts/replit-start.sh || true
 echo
 echo "Preview proxy is expected in this 8.4 working architecture:"
 grep -n "proxy-server\|PREVIEW_PROXY_PORT\|VITE_TARGET_PORT" scripts/replit-start.sh || true
 
-section "8. Diagnosis guide"
+section "9. Diagnosis guide"
 cat <<'GUIDE'
 If public URL is HTTP 502 but local 5000/5001/3001 work:
   - Do not touch React.
