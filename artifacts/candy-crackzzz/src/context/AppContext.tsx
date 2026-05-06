@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
-import { MerchItem, OrderRequest, Product, RewardsCampaign, Review, RewardProfile, Settings, CartItem } from '../types';
+import { MerchItem, OrderRequest, Product, RewardsCampaign, Review, RewardProfile, Settings, CartItem, InventoryItem, InventoryTransaction } from '../types';
 import { defaultSettings, sampleMerchItems, sampleProducts, sampleCampaigns } from '../lib/defaults';
 import { apiGetBootstrap, apiPersistState } from '../lib/api';
 import { useAuth } from './AuthContext';
@@ -22,6 +22,10 @@ interface AppContextType {
   setMerch: React.Dispatch<React.SetStateAction<MerchItem[]>>;
   campaigns: RewardsCampaign[];
   setCampaigns: React.Dispatch<React.SetStateAction<RewardsCampaign[]>>;
+  inventoryItems: InventoryItem[];
+  setInventoryItems: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
+  inventoryTransactions: InventoryTransaction[];
+  setInventoryTransactions: React.Dispatch<React.SetStateAction<InventoryTransaction[]>>;
   addToCart: (item: Omit<CartItem, 'id'>) => void;
   removeFromCart: (id: string) => void;
   clearCart: () => void;
@@ -42,6 +46,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [rewardProfiles, setRewardProfiles] = useState<RewardProfile[]>([]);
   const [merch, setMerch] = useState<MerchItem[]>(sampleMerchItems);
   const [campaigns, setCampaigns] = useState<RewardsCampaign[]>(sampleCampaigns);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [inventoryTransactions, setInventoryTransactions] = useState<InventoryTransaction[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [usingFallbackDefaults, setUsingFallbackDefaults] = useState(false);
   const [bootstrapTick, setBootstrapTick] = useState(0);
@@ -76,6 +82,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setRewardProfiles(bootstrap.state.rewardProfiles ?? []);
         setMerch(bootstrap.state.merch?.length ? bootstrap.state.merch : sampleMerchItems);
         setCampaigns(bootstrap.state.campaigns?.length ? bootstrap.state.campaigns : sampleCampaigns);
+        setInventoryItems(bootstrap.state.inventory ?? []);
+        setInventoryTransactions(bootstrap.state.inventoryTransactions ?? []);
         setUsingFallbackDefaults(false);
       } catch (error) {
         console.error('Failed to load backend app state.', error);
@@ -87,6 +95,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setRewardProfiles([]);
         setMerch(sampleMerchItems);
         setCampaigns(sampleCampaigns);
+        setInventoryItems([]);
+        setInventoryTransactions([]);
         setUsingFallbackDefaults(true);
       } finally {
         if (isMounted) {
@@ -141,6 +151,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     void apiPersistState('campaigns', campaigns).catch((error) => console.error('Failed to persist campaigns.', error));
   }, [campaigns, isLoaded, isAuthLoaded, isOwner]);
 
+  useEffect(() => {
+    if (!isLoaded || !isAuthLoaded || !isOwner) return;
+    void apiPersistState('inventory', inventoryItems).catch((error) => console.error('Failed to persist inventory.', error));
+  }, [inventoryItems, isLoaded, isAuthLoaded, isOwner]);
+
+  useEffect(() => {
+    if (!isLoaded || !isAuthLoaded || !isOwner) return;
+    void apiPersistState('inventoryTransactions', inventoryTransactions).catch((error) => console.error('Failed to persist inventory transactions.', error));
+  }, [inventoryTransactions, isLoaded, isAuthLoaded, isOwner]);
+
   const addToCart = (item: Omit<CartItem, 'id'>) => {
     setCart(prev => [...prev, { ...item, id: Math.random().toString(36).substring(2, 9) }]);
   };
@@ -168,6 +188,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       rewardProfiles, setRewardProfiles,
       merch, setMerch,
       campaigns, setCampaigns,
+      inventoryItems, setInventoryItems,
+      inventoryTransactions, setInventoryTransactions,
       addToCart, removeFromCart, clearCart, cartTotal,
       usingFallbackDefaults, retryBootstrap,
     }}>

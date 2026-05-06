@@ -1,8 +1,25 @@
-# Workspace
+# Candy Crackzzz
 
-## Overview
+Candy Crackzzz is an e-commerce platform for ordering custom candies, featuring an admin panel for product, order, and customer message management.
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+## Run & Operate
+
+- `pnpm run typecheck` — Full typecheck across all packages.
+- `pnpm run build` — Typecheck and build all packages.
+- `pnpm --filter @workspace/api-spec run codegen` — Regenerate API hooks and Zod schemas from OpenAPI spec.
+- `pnpm --filter @workspace/db run push` — Push DB schema changes (development only).
+- `pnpm --filter @workspace/api-server run dev` — Run API server locally.
+
+**Required Environment Variables:**
+- `DATABASE_URL`: PostgreSQL connection string.
+- `ADMIN_USERNAME`: Default admin login username.
+- `ADMIN_PASSWORD`: Default admin login password.
+- `SESSION_SECRET`: Long random string for session signing and password hashing.
+
+**Optional Environment Variables:**
+- `RESEND_API_KEY`, `ORDER_FROM_EMAIL`, `ORDER_NOTIFICATION_EMAIL` (for email alerts via Resend)
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_PHONE`, `ORDER_NOTIFICATION_PHONE` (for SMS alerts via Twilio)
+- `BUSINESS_NAME` (for branding in notifications)
 
 ## Stack
 
@@ -15,145 +32,54 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Frontend**: React + Vite
 
-## Key Commands
+## Where things live
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+- **Root**: pnpm workspace monorepo.
+- **Frontend App**: `artifacts/candy-crackzzz` (React + Vite).
+- **API Server**: `artifacts/api-server` (Express API).
+- **Database Schema**: `packages/db/schema.ts`
+- **API Contracts**: `packages/api-spec/openapi.yaml`
+- **Permissions Map**: `artifacts/api-server/src/routes/candy-storage.ts` (server) and `artifacts/candy-crackzzz/src/lib/permissions.ts` (client).
+- **Notification Sounds**: `artifacts/candy-crackzzz/src/lib/notificationSounds.ts`
+- **Referral Sharing Logic**: `artifacts/candy-crackzzz/src/lib/referralShare.ts`
+- **Branding Assets**: `attached_assets/candy_crackzzz_2_1776628492110.png` (logo)
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+## Architecture decisions
 
-## Candy Crackzzz App
+- **Monorepo Structure**: Uses pnpm workspaces for managing multiple packages, promoting code reuse and consistent dependency management.
+- **Backend Persistence**: Prioritizes PostgreSQL with Drizzle ORM; falls back to a JSON file only if `DATABASE_URL` is unavailable (data loss on redeploy).
+- **Authentication**: Multi-admin role-based access control with HMAC-SHA256 password hashing. Legacy SHA256 hashes auto-migrate on first login. Sessions are signed cookies.
+- **Client-Side Data Hydration**: Core application state (like inventory items and transactions) is loaded at bootstrap and persisted via `apiPersistState` for a responsive UI.
+- **Notification Sound Management**: Implements an explicit user interaction (click to enable) for audio playback due to browser autoplay policies, ensuring a reliable sound experience.
 
-**Artifact**: `artifacts/candy-crackzzz` (React + Vite frontend) + `artifacts/api-server` (Express API at `/api/cc/*`)
-**Preview path**: `/`
+## Product
 
-### Architecture
-- **Startup layout**: `Start application` runs `scripts/replit-start.sh` and only starts the embedded preview proxy on port 5000. `artifacts/candy-crackzzz: web` owns Vite on port 5001. `artifacts/api-server: API Server` owns Express on port 3001. The preview workflow must not launch Vite or API or it will conflict with the artifact workflows.
-- **Backend persistence**: PostgreSQL via Drizzle (`@workspace/db`). Tables: `cc_state`, `cc_messages`, `cc_notifications`. JSON-file fallback only used when `DATABASE_URL` is unavailable.
-- **Auth**: Multi-admin role-based access control. The bootstrap owner is seeded from `ADMIN_USERNAME` / `ADMIN_PASSWORD` env vars; additional admins are created from the `/admin/team` page (owners only). Passwords hashed with HMAC-SHA256 keyed by `SESSION_SECRET` (legacy SHA256 hashes are auto-migrated on first login). Sessions are signed cookies issued by the API server.
-- **Roles & permissions**: 6 roles — `owner`, `site_admin`, `system_admin`, `campaign_admin`, `staff` (alias: `employee`), `viewer`. Each role maps to a set of permission flags (e.g. `manageProducts`, `manageOrders`, `manageRewards`, `manageMerch`, `manageCampaigns`, `manageBranding`, `managePayments`, `manageSiteSettings`, `manageSystemSettings`, `manageAdmins`, `manageMessages`, plus their `view*` counterparts). The map lives in `artifacts/api-server/src/routes/candy-storage.ts` (server) and `artifacts/candy-crackzzz/src/lib/permissions.ts` (client) — keep these two in sync. Owner has all permissions implicitly.
-- **Route guarding**: `ProtectedRoute` accepts `requirePermission` or `requireAnyPermission` props and renders a friendly access-denied page (rather than silently redirecting) when an authenticated user lacks permission. The admin sidebar (`AdminLayout.tsx`) filters nav items by the same permissions.
-- **Team management**: `/admin/team` (owner-only) lets owners add/edit/disable/delete admins and reset their temporary passwords. Backend endpoints at `POST/PATCH/DELETE /cc/auth/admin-users` and `POST /cc/auth/admin-users/:id/reset-password` are gated by `manageAdmins` and protect the last active owner from being demoted/disabled/deleted. Temporary passwords are returned exactly once in the API response (the "invite" payload) and shown in a dismissible banner on the Team page.
-- **Public setup is disabled** — `/admin/setup` redirects to `/admin/login`; the bootstrap owner comes from env vars.
-- **Notifications**: Email via Resend, SMS via Twilio. Both providers gracefully skip (with reason) when their secrets are missing — orders and messages still save and appear in the admin inbox + bell.
-- ProtectedRoute redirects unauthenticated users to `/admin/login`.
+- **Public Storefront**: Home, Menu (with search/filters), Product Details, Gallery, Seasonal Specials, Custom Orders, Cart, Order Success, Contact pages.
+- **Admin Panel**: Dashboard (stats, system health), Product Management (CRUD, image upload, inventory usage), Order Management (mobile-friendly), Customer Message Inbox, Review Moderation, Settings (general, messages, features, logistics), Branding (logo upload), Payment Method toggles, Account management (password change).
+- **Referral Sharing**: Integrated referral system with Web Share API and fallbacks, allowing customers to share referral codes.
+- **Real-time Notifications**: Admin bell icon polls for new orders/messages, with customizable sound alerts and visual indicators.
+- **Inventory Tracking**: Comprehensive system for managing inventory items, tracking usage in product recipes, deducting from orders, and transaction history.
+- **Analytics Dashboard**: Full-featured analytics including summary stats, top pages, device breakdown, traffic sources, and recent visits.
 
-### Public Pages
-- `/` — Home: hero + logo, featured items, seasonal banner, reviews section
-- `/menu` — Menu with category filter, search, product cards
-- `/menu/:slug` — Product detail with add to cart
-- `/gallery` — Photo gallery
-- `/seasonal` — Seasonal specials
-- `/custom-orders` — Custom order inquiry form
-- `/cart` — Cart + order request form with conditional payment methods
-- `/order-success` — Success after order submission
-- `/contact` — Contact info, social links, contact form, leave-a-review form
+## User preferences
 
-### Admin Auth Flow
-- `/admin/setup` — First-run only. Creates admin username + password. Never shown again after setup.
-- `/admin/login` — Normal login after setup. Username visible, password masked with show/hide toggle.
-- All `/admin/*` routes are protected by ProtectedRoute — redirects to setup or login if unauthorized.
-- Logout clears sessionStorage session only (account stays in localStorage).
+_Populate as you build_
 
-### Admin Pages (all protected)
-- `/admin` — Dashboard with stats, recent orders, **System Health card** (DB / admin secrets / email / SMS) with Test Email + Test SMS buttons
-- `/admin/products` — Product list management
-- `/admin/products/new` — Add product with real image upload
-- `/admin/products/:id/edit` — Edit product
-- `/admin/orders` — Mobile-friendly order management with expandable cards and tap-friendly status buttons
-- `/admin/messages` — Customer message inbox (read/unread, archive, delete, reply via mailto/sms)
-- `/admin/reviews` — Review moderation (approve / hide / delete / feature)
-- `/admin/settings` — 4-tab settings: General, Messages, Features, Logistics
-- `/admin/branding` — Logo upload, preview, replace, remove
-- `/admin/payments` — Full payment method toggles (Cash App, Venmo, Zelle, QR Code, Manual Invoice, Cash at Pickup, Square placeholder)
-- `/admin/account` — Change admin password (account changes require env updates)
+## Gotchas
 
-### Referral Sharing
-- `src/lib/referralShare.ts` builds the share message from `settings.businessName`, `referralReferrerBonusPoints`, and `referralReferredCustomerBonusPoints`. Provides Web Share API + clipboard helpers and SMS / mailto fallback URL builders.
-- `src/components/referrals/ReferralShareButton.tsx` is the reusable share button. It hides itself when `settings.enableReferrals` is false or when no code is provided. Uses `navigator.share` when available and falls back to a dropdown with Copy code, Copy message, SMS, and Email options. Wired into `RewardsPage`, `RewardsPagePlus`, `CartPage` (customer's own code), and `AdminRewards` (selected profile only — no other customer data is shared).
+- **Admin Setup**: Public setup route `/admin/setup` is disabled; bootstrap admin comes from `ADMIN_USERNAME`/`ADMIN_PASSWORD` env vars.
+- **Permissions Sync**: Client and server-side permission maps (`artifacts/api-server/src/routes/candy-storage.ts` and `artifacts/candy-crackzzz/src/lib/permissions.ts`) must be kept in sync.
+- **Notification Sounds**: Notification audio requires an explicit user interaction to unlock due to browser policies; debug with `localStorage.cc_audio_debug === '1'`.
+- **Wouter Link Component**: When using `Wouter v3`, `Link` renders as an `<a>` directly; avoid nesting `<a>` tags inside `Link` components.
 
-### Notification Bell & Sounds
-- Bell icon in admin top bar polls `/api/cc/notifications` (default 12s, 4× slower when tab hidden).
-- Shows unread count, lists recent notifications, supports mark-all-read, mark single read/unread, delete, and click-through to `/admin/messages` or `/admin/orders`.
-- Sound system lives in `src/lib/notificationSounds.ts`. `unlockNotificationAudio()` is **async** and awaits `ctx.resume()` before flipping the in-memory `unlocked` flag — this is the gate that prevents silent first-call failures. `canPlayNotificationAudio()` returns true only when unlocked AND `ctx.state === 'running'`. All `play*` helpers are async, return `boolean`, and self-clear `unlocked` if the context dies mid-session so the UI re-prompts.
-- `subscribeNotificationAudio(listener)` lets React components react to global unlock/lock state changes without polling.
-- Debug logging is gated by `localStorage.cc_audio_debug === '1'` — set it in DevTools to trace `[notificationSounds]` / `[NotificationBell]` events while debugging.
-- `NotificationSoundUnlockBanner` (rendered in `AdminLayout` above `{children}`) shows a full-width "Click to enable notification sounds" prompt whenever `notificationSoundsEnabled` is on but audio is locked. Clicking it awaits unlock and plays a confirmation chime.
-- `NotificationBell` maps `type === 'order'` → order chime, `type === 'message'` → message chime, anything else → general chime. If a notification arrives while audio is locked, it sets a "Notification received. Click Enable Sounds…" warning inside the dropdown (not silent).
-- `AdminSettings → Alerts → Notification Sounds` exposes the master toggle, volume slider, per-type toggles, and **Test Order/Message/General Sound** buttons that await unlock before playing and toast on browser block.
-- Sounds are admin-only — customer pages never import the sound module.
-- Backend (`artifacts/api-server/src/routes/candy.ts`) creates `type: "order"` for new orders and `type: "message"` for new contact submissions; everything else falls through to general.
+## Pointers
 
-### Key Features
-- First-run admin setup → normal login → session-based auth → logout
-- All admin routes protected; public storefront always accessible
-- Payments are OFF by default; Square is disabled (Coming Soon)
-- Customers only see payment methods the admin has enabled
-- Reviews: customers submit on /contact (pending status) → admin approves/features → shown on homepage
-- Featured reviews appear first on homepage; falls back to placeholder testimonials until real ones exist
-- Message destination emails configurable in admin/settings → Messages tab
-- Mobile admin: orders use expandable card layout with grid of tap-friendly status buttons
-- Order statuses: New, Pending, Confirmed, Ready, Picked Up, Completed, Cancelled
-- Logo management: upload custom logo, preview, remove (falls back to default Candy Crackzzz logo)
-
-### Brand
-- Default brand: Candy Crackzzz (never removed)
-- Logo: `attached_assets/candy_crackzzz_2_1776628492110.png`
-- Colors: hot pink (primary), electric blue (secondary), purple (accent), very dark purple background
-- Font: Nunito (Google Fonts)
-- Wouter v3 routing: Link renders as `<a>` directly — never nest `<a>` inside Link
-
-## Admin Login (Default Credentials)
-
-The admin account is seeded automatically from environment variables. If `ADMIN_USERNAME` / `ADMIN_PASSWORD` are not set, the bootstrap defaults are:
-- **Username**: `owner`
-- **Password**: `CandyCrackzzzTemp1!`
-
-On first login the admin will see a banner prompting a password change — do this before going live via `/admin/account`. To set a custom username/password, add `ADMIN_USERNAME` and `ADMIN_PASSWORD` as Secrets in the Replit Secrets pane, then restart the workflow.
-
-## What Was Added (by Replit Agent)
-
-- **`/admin/analytics`** — Full-featured Analyticzz dashboard page with:
-  - Summary stat cards (Total Views, Unique Visitors, Today/Week/Month)
-  - Bar chart of top pages (recharts)
-  - Donut chart of device breakdown (Desktop / Mobile / Tablet)
-  - Page rankings table with visual progress bars
-  - Traffic sources / referrer breakdown
-  - Recent visits live table
-  - Refresh button
-- **Sidebar link** — "Analyticzz" entry added to the admin sidebar (visible to roles with `viewAnalytics` or `manageAnalytics` permission)
-- **Route** — `/admin/analytics` protected route added to `App.tsx`
-
-## WHAT AUSTIN NEEDS TO DO NEXT
-
-The app is production-ready and runs gracefully without the optional secrets below — orders and messages will still save and appear in the admin inbox + bell. Add the optional secrets only when you want live email/SMS alerts.
-
-### Required (already set in this environment)
-- `DATABASE_URL` — Postgres connection. Without it the app falls back to a temporary JSON file (data will not survive redeploys).
-- `ADMIN_USERNAME` — admin login username (currently: `admin`)
-- `ADMIN_PASSWORD` — admin login password (currently: `1234321` — change in Deployments → Secrets before going live)
-- `SESSION_SECRET` — long random string used to sign session cookies and hash the admin password. Rotating this invalidates all sessions.
-
-### Optional — Email alerts (Resend)
-- `RESEND_API_KEY` — from https://resend.com/api-keys
-- `ORDER_FROM_EMAIL` — verified sender address on your Resend domain (e.g. `orders@candycrackzzz.com`)
-- `ORDER_NOTIFICATION_EMAIL` — where order/message alerts are delivered (defaults to the business email in admin settings)
-
-### Optional — SMS alerts (Twilio)
-- `TWILIO_ACCOUNT_SID`
-- `TWILIO_AUTH_TOKEN`
-- `TWILIO_FROM_PHONE` — your Twilio number in E.164 format (e.g. `+15555550123`)
-- `ORDER_NOTIFICATION_PHONE` — where order/message alerts are texted (defaults to the phone in admin settings)
-
-### Optional — Branding
-- `BUSINESS_NAME` — used in email subjects and SMS body when set (defaults to "Candy Crackzzz")
-
-### How to add secrets
-1. Open the Secrets pane in this Repl (or Deployments → Secrets for production).
-2. Add each key/value pair from the list above.
-3. Restart the **API Server** workflow (or redeploy).
-4. Open `/admin` → **System Health** card → click **Test Email** / **Test SMS** to verify delivery.
+- **Replit Documentation**: Refer to the Replit documentation for information on using the Secrets pane and managing environment variables.
+- **pnpm-workspace skill**: Consult the `pnpm-workspace` skill for details on workspace structure, TypeScript setup, and package specifics.
+- **Drizzle ORM Documentation**: [https://orm.drizzle.team/](https://orm.drizzle.team/)
+- **Zod Documentation**: [https://zod.dev/](https://zod.dev/)
+- **Orval Documentation**: [https://orval.dev/](https://orval.dev/)
+- **Express Documentation**: [https://expressjs.com/](https://expressjs.com/)
+- **React Documentation**: [https://react.dev/](https://react.dev/)

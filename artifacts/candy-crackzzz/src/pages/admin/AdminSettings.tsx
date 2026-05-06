@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Mail, Info, MapPin, MessageCircle, Bell, BarChart3, Volume2 } from 'lucide-react';
+import { Save, Mail, Info, MapPin, MessageCircle, Bell, BarChart3, Volume2, Boxes } from 'lucide-react';
 import { Settings } from '@/types';
 import {
   playOrderNotificationSound,
@@ -79,6 +79,7 @@ export default function AdminSettings() {
           <TabsTrigger value="helper" className="font-bold uppercase tracking-wider px-4 py-2.5">Helper</TabsTrigger>
           <TabsTrigger value="notifications" className="font-bold uppercase tracking-wider px-4 py-2.5">Alerts</TabsTrigger>
           <TabsTrigger value="analytics" className="font-bold uppercase tracking-wider px-4 py-2.5">Analytics</TabsTrigger>
+          <TabsTrigger value="inventory" className="font-bold uppercase tracking-wider px-4 py-2.5">Inventory</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="max-w-3xl">
@@ -547,6 +548,60 @@ export default function AdminSettings() {
                 className="bg-background font-bold h-11"
               />
               <p className="text-xs text-muted-foreground">When the table exceeds this, the oldest rows are pruned automatically.</p>
+            </div>
+          </SectionCard>
+        </TabsContent>
+
+        <TabsContent value="inventory" className="max-w-3xl">
+          <SectionCard title="Inventory Tracking" icon={<Boxes className="w-4 h-4" />}>
+            <div className="flex items-center justify-between p-3 border-b border-border">
+              <div>
+                <Label className="font-bold">Enable Inventory Tracking</Label>
+                <p className="text-sm text-muted-foreground">Track stock levels for ingredients, packaging, and supplies.</p>
+              </div>
+              <Switch checked={formData.enableInventoryTracking} onCheckedChange={v => set({ enableInventoryTracking: v })} />
+            </div>
+            <div className="flex items-center justify-between p-3 border-b border-border">
+              <div>
+                <Label className="font-bold">Show Low Stock Alerts</Label>
+                <p className="text-sm text-muted-foreground">Display a banner on the Inventory page when items are running low or out.</p>
+              </div>
+              <Switch checked={formData.inventoryShowLowStockAlerts} onCheckedChange={v => set({ inventoryShowLowStockAlerts: v })} />
+            </div>
+            <div className="flex items-center justify-between p-3 border-b border-border">
+              <div>
+                <Label className="font-bold">Allow Negative Inventory</Label>
+                <p className="text-sm text-muted-foreground">Let quantities go below zero (useful if fulfilling orders before restocking).</p>
+              </div>
+              <Switch checked={formData.inventoryAllowNegative} onCheckedChange={v => set({ inventoryAllowNegative: v })} />
+            </div>
+            <div className="space-y-2 max-w-xs p-3">
+              <Label className="font-bold">Default Low Stock Threshold</Label>
+              <Input
+                type="number"
+                min={0}
+                value={formData.inventoryDefaultLowStockThreshold}
+                onChange={e => set({ inventoryDefaultLowStockThreshold: Math.max(0, parseInt(e.target.value) || 0) })}
+                className="bg-background font-bold h-11"
+              />
+              <p className="text-xs text-muted-foreground">Applied when creating new inventory items. Individual items can override this.</p>
+            </div>
+            <div className="space-y-2 max-w-xs p-3">
+              <Label className="font-bold">Inventory Deduction Timing</Label>
+              <select
+                value={formData.inventoryDeductTiming}
+                onChange={e => set({ inventoryDeductTiming: e.target.value as Settings['inventoryDeductTiming'] })}
+                className="w-full h-11 rounded-md border border-border bg-background px-3 font-bold text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="on_order">On Order (deduct when order placed)</option>
+                <option value="on_completion">On Completion (deduct when order completed)</option>
+                <option value="manual">Manual (admin deducts from order detail)</option>
+              </select>
+              <p className="text-xs text-muted-foreground">Controls when inventory is automatically suggested for deduction. Manual requires pressing the Deduct button per order.</p>
+            </div>
+            <div className="rounded-lg border border-secondary/30 bg-secondary/5 p-4 text-sm">
+              <p className="font-black text-secondary mb-1">How to set up product recipes</p>
+              <p className="text-muted-foreground">Go to <strong className="text-foreground">Productzzz → Edit</strong> any product and scroll to the <strong className="text-foreground">Inventory Usage</strong> section to link inventory items to that product (the recipe). When enabled, deducting an order will automatically reduce those items.</p>
             </div>
           </SectionCard>
         </TabsContent>

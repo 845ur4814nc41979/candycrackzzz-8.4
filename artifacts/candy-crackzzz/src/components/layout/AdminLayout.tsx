@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Package, ShoppingCart, Settings, Palette, CreditCard, Store, Menu, Star, ShieldCheck, LogOut, AlertTriangle, Mail, Gift, Shirt, Zap, Users, Truck, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Settings, Palette, CreditCard, Store, Menu, Star, ShieldCheck, LogOut, AlertTriangle, Mail, Gift, Shirt, Zap, Users, Truck, BarChart2, Boxes } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -39,6 +39,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/admin/rewards', icon: Gift, label: 'Rewardzzz', permissions: ['manageRewards', 'viewRewards'] },
     { href: '/admin/staff-referralzzz', icon: Users, label: 'Staff Referralzzz', permissions: ['manageRewards', 'manageAdmins'] },
     { href: '/admin/campaigns', icon: Zap, label: 'Campaignzzz', permissions: ['manageCampaigns', 'viewCampaigns'] },
+    { href: '/admin/inventory', icon: Boxes, label: 'Inventoryzz', permissions: ['manageProducts', 'viewProducts'] },
     { href: '/admin/analytics', icon: BarChart2, label: 'Analyticzz', permissions: ['viewAnalytics', 'manageAnalytics'] },
     { href: '/admin/settings', icon: Settings, label: 'Settingzzz', permissions: ['manageSiteSettings', 'manageSystemSettings'] },
     { href: '/admin/branding', icon: Palette, label: 'Branding', permissions: ['manageBranding'] },

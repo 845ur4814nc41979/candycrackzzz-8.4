@@ -40,6 +40,7 @@ import AdminAccount from "@/pages/admin/AdminAccount";
 import AdminMessages from "@/pages/admin/AdminMessages";
 import AdminTeam from "@/pages/admin/AdminTeam";
 import AdminAnalytics from "@/pages/admin/AdminAnalytics";
+import AdminInventory from "@/pages/admin/AdminInventory";
 import PageViewTracker from "@/components/analytics/PageViewTracker";
 import StaffReferralTracker from "@/components/referrals/StaffReferralTracker";
 
@@ -118,6 +119,9 @@ function Router() {
       </Route>
       <Route path="/admin/analytics">
         {() => <ProtectedRoute requireAnyPermission={['viewAnalytics', 'manageAnalytics']}><AdminAnalytics /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/inventory">
+        {() => <ProtectedRoute requireAnyPermission={['manageProducts', 'viewProducts']}><AdminInventory /></ProtectedRoute>}
       </Route>
 
       <Route component={NotFound} />

@@ -162,7 +162,7 @@ export interface SessionRecord {
   startedAt?: string;
 }
 
-export type StateKey = "products" | "orders" | "settings" | "reviews" | "rewardProfiles" | "merch" | "campaigns";
+export type StateKey = "products" | "orders" | "settings" | "reviews" | "rewardProfiles" | "merch" | "campaigns" | "inventory" | "inventoryTransactions";
 
 export interface PersistedState {
   products: unknown[];
@@ -172,6 +172,8 @@ export interface PersistedState {
   rewardProfiles: unknown[];
   merch: unknown[];
   campaigns: unknown[];
+  inventory: unknown[];
+  inventoryTransactions: unknown[];
 }
 
 export interface AuthState {
@@ -211,8 +213,8 @@ export interface NotificationRecord {
   readAt: string | null;
 }
 
-export const STATE_KEYS: StateKey[] = ["products", "orders", "settings", "reviews", "rewardProfiles", "merch", "campaigns"];
-export const OWNER_ONLY_STATE_KEYS = new Set<StateKey>(["products", "settings", "reviews", "merch", "campaigns"]);
+export const STATE_KEYS: StateKey[] = ["products", "orders", "settings", "reviews", "rewardProfiles", "merch", "campaigns", "inventory", "inventoryTransactions"];
+export const OWNER_ONLY_STATE_KEYS = new Set<StateKey>(["products", "settings", "reviews", "merch", "campaigns", "inventory", "inventoryTransactions"]);
 
 export const DEFAULT_OWNER_USERNAME = normalizeUsername(
   process.env["ADMIN_USERNAME"] ?? process.env["CANDY_CRACKZZZ_DEFAULT_ADMIN_USERNAME"] ?? "owner",

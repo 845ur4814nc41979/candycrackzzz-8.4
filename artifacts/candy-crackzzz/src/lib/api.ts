@@ -2,6 +2,8 @@ import type {
   AdminActivityEntry,
   AdminRole,
   AdminUser,
+  InventoryItem,
+  InventoryTransaction,
   MerchItem,
   OrderRequest,
   Product,
@@ -30,6 +32,8 @@ export interface BootstrapResponse {
     rewardProfiles: RewardProfile[];
     merch: MerchItem[];
     campaigns: RewardsCampaign[];
+    inventory: InventoryItem[];
+    inventoryTransactions: InventoryTransaction[];
   };
   auth: AuthSnapshot;
 }
@@ -446,3 +450,7 @@ export function apiAiReferralMessage(payload: AiReferralMessagePayload) {
     body: JSON.stringify(payload),
   });
 }
+
+// -------- Inventory (helpers only — CRUD via apiPersistState) --------
+
+export { type InventoryItem, type InventoryTransaction } from '../types';

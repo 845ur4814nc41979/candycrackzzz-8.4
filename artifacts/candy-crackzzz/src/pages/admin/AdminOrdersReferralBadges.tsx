@@ -2,8 +2,8 @@ import { useState } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { useAppContext } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
-import { OrderStatus } from '@/types';
-import { ChevronDown, Package, User, Calendar, MapPin, CreditCard, StickyNote, Navigation, AlertTriangle } from 'lucide-react';
+import { OrderStatus, InventoryTransaction } from '@/types';
+import { ChevronDown, Package, User, Calendar, MapPin, CreditCard, StickyNote, Navigation, AlertTriangle, Boxes, RotateCcw } from 'lucide-react';
 import { awardCompletedOrderRewards } from '@/lib/rewards';
 import { buildGoogleMapsDirectionsUrl, hasUsableAddress } from '@/lib/directions';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 export default function AdminOrdersReferralBadges() {
-  const { orders, setOrders, settings, rewardProfiles, setRewardProfiles } = useAppContext();
+  const { orders, setOrders, settings, rewardProfiles, setRewardProfiles, products, inventoryItems, setInventoryItems, inventoryTransactions, setInventoryTransactions } = useAppContext();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -92,6 +92,97 @@ export default function AdminOrdersReferralBadges() {
           ? completedAt
           : o.rewardsRedeemedAt,
     } : o));
+  };
+
+  const deductInventory = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order || order.inventoryDeductionStatus === 'deducted') return;
+
+    const now = new Date().toISOString();
+    const newTransactions: InventoryTransaction[] = [];
+    let anyDeduction = false;
+
+    const updatedItems = inventoryItems.map(invItem => {
+      let totalDeduction = 0;
+
+      for (const cartItem of order.items) {
+        const product = products.find(p => p.name === cartItem.name || p.id === (cartItem as any).productId);
+        if (!product?.inventoryUsage) continue;
+        const usage = product.inventoryUsage.find(u => u.inventoryItemId === invItem.id);
+        if (!usage) continue;
+        totalDeduction += usage.quantityUsed * (cartItem.quantity ?? 1);
+      }
+
+      if (totalDeduction <= 0) return invItem;
+      anyDeduction = true;
+
+      const prev = invItem.currentQty;
+      const next = settings.inventoryAllowNegative ? prev - totalDeduction : Math.max(0, prev - totalDeduction);
+
+      newTransactions.push({
+        id: Math.random().toString(36).substring(2, 10),
+        inventoryItemId: invItem.id,
+        orderId,
+        transactionType: 'order_deduction',
+        quantityChange: -totalDeduction,
+        previousQty: prev,
+        newQty: next,
+        reason: `Order deduction — ${order.customerName}`,
+        createdAt: now,
+      });
+
+      return { ...invItem, currentQty: next, updatedAt: now };
+    });
+
+    if (!anyDeduction) {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, inventoryDeductionStatus: 'no_recipe', inventoryDeductedAt: now } : o));
+      return;
+    }
+
+    setInventoryItems(updatedItems);
+    setInventoryTransactions(prev => [...newTransactions, ...prev]);
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, inventoryDeductionStatus: 'deducted', inventoryDeductedAt: now } : o));
+  };
+
+  const reverseInventoryDeduction = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order || order.inventoryDeductionStatus !== 'deducted') return;
+
+    const now = new Date().toISOString();
+    const relatedTx = inventoryTransactions.filter(t => t.orderId === orderId && t.transactionType === 'order_deduction');
+
+    if (relatedTx.length === 0) {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, inventoryDeductionStatus: 'reversed', inventoryDeductedAt: undefined } : o));
+      return;
+    }
+
+    const reverseTxs: InventoryTransaction[] = [];
+    const updatedItems = inventoryItems.map(invItem => {
+      const tx = relatedTx.find(t => t.inventoryItemId === invItem.id);
+      if (!tx) return invItem;
+
+      const reverseAmount = -tx.quantityChange;
+      const prev = invItem.currentQty;
+      const next = prev + reverseAmount;
+
+      reverseTxs.push({
+        id: Math.random().toString(36).substring(2, 10),
+        inventoryItemId: invItem.id,
+        orderId,
+        transactionType: 'return',
+        quantityChange: reverseAmount,
+        previousQty: prev,
+        newQty: next,
+        reason: `Inventory reversal — ${order.customerName}`,
+        createdAt: now,
+      });
+
+      return { ...invItem, currentQty: next, updatedAt: now };
+    });
+
+    setInventoryItems(updatedItems);
+    setInventoryTransactions(prev => [...reverseTxs, ...prev]);
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, inventoryDeductionStatus: 'reversed', inventoryDeductedAt: undefined } : o));
   };
 
   return (
@@ -228,6 +319,46 @@ export default function AdminOrdersReferralBadges() {
                       {order.referralCodeUsed && <div className="text-sm font-bold text-secondary mt-2">Referral code used: {order.referralCodeUsed}</div>}
                       {!!order.referralReferredCustomerPointsAwarded && <div className="text-sm text-primary mt-1">Referred customer bonus: {order.referralReferredCustomerPointsAwarded} pts</div>}
                       {!!order.referralReferrerPointsAwarded && <div className="text-sm text-primary mt-1">Referrer bonus: {order.referralReferrerPointsAwarded} pts</div>}
+                    </div>
+                  )}
+
+                  {settings.enableInventoryTracking && (
+                    <div className="bg-background rounded-xl p-4 border border-secondary/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted-foreground">
+                          <Boxes className="w-4 h-4" /> Inventory
+                        </div>
+                        {order.inventoryDeductionStatus === 'deducted' && (
+                          <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-600/80 text-white uppercase tracking-wider">Deducted</span>
+                        )}
+                        {order.inventoryDeductionStatus === 'reversed' && (
+                          <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-yellow-500 text-black uppercase tracking-wider">Reversed</span>
+                        )}
+                        {order.inventoryDeductionStatus === 'no_recipe' && (
+                          <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-muted text-muted-foreground uppercase tracking-wider">No Recipe</span>
+                        )}
+                      </div>
+                      {order.inventoryDeductedAt && order.inventoryDeductionStatus === 'deducted' && (
+                        <p className="text-xs text-muted-foreground mb-2">Deducted {new Date(order.inventoryDeductedAt).toLocaleDateString()}</p>
+                      )}
+                      <div className="flex gap-2 flex-wrap mt-1">
+                        {order.inventoryDeductionStatus !== 'deducted' && (
+                          <Button size="sm" className="font-black bg-secondary/90 hover:bg-secondary text-secondary-foreground" onClick={() => deductInventory(order.id)}>
+                            <Boxes className="w-3.5 h-3.5 mr-1" /> Deduct Inventory
+                          </Button>
+                        )}
+                        {order.inventoryDeductionStatus === 'deducted' && (
+                          <Button size="sm" variant="outline" className="font-black text-xs" onClick={() => reverseInventoryDeduction(order.id)}>
+                            <RotateCcw className="w-3.5 h-3.5 mr-1" /> Reverse Deduction
+                          </Button>
+                        )}
+                        {(!order.inventoryDeductionStatus || order.inventoryDeductionStatus === 'not_deducted') && (
+                          <p className="text-xs text-muted-foreground self-center">Press to deduct ingredients based on product recipes.</p>
+                        )}
+                        {order.inventoryDeductionStatus === 'no_recipe' && (
+                          <p className="text-xs text-muted-foreground self-center">No inventory recipes found for items in this order. Set up recipes in Productzzz → Edit.</p>
+                        )}
+                      </div>
                     </div>
                   )}
 

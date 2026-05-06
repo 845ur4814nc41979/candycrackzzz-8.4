@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Boxes } from 'lucide-react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,14 @@ import SmartDescriptionButton from '@/components/admin/SmartDescriptionButton';
 import AiGenerateButton from '@/components/admin/AiGenerateButton';
 import { generateProductDescription, generateShortProductDescription } from '@/lib/smartDescription';
 import { apiAiProductDescription } from '@/lib/api';
-import { Product, ProductCategory } from '@/types';
+import { Product, ProductCategory, InventoryUsageItem, InventoryDeductionTiming, InventoryUnit } from '@/types';
+
+const UNIT_LABELS: Record<InventoryUnit, string> = {
+  each: 'each', oz: 'oz', lb: 'lb', gram: 'g', gallon: 'gal',
+  bottle: 'bottle', case: 'case', box: 'box', sleeve: 'sleeve',
+  pack: 'pack', bag: 'bag', roll: 'roll', other: 'other',
+};
+const UNITS: InventoryUnit[] = ['each','oz','lb','gram','gallon','bottle','case','box','sleeve','pack','bag','roll','other'];
 
 const defaultProduct: Omit<Product, 'id' | 'createdAt'> = {
   name: '',
@@ -32,7 +39,8 @@ const defaultProduct: Omit<Product, 'id' | 'createdAt'> = {
   isSeasonal: false,
   isCustomEligible: false,
   isSoldOut: false,
-  isVisible: true
+  isVisible: true,
+  inventoryUsage: [],
 };
 
 export default function AdminProductForm() {
@@ -42,7 +50,7 @@ export default function AdminProductForm() {
   const productId = editParams?.id;
   const [, setLocation] = useLocation();
 
-  const { products, setProducts } = useAppContext();
+  const { products, setProducts, inventoryItems } = useAppContext();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState<Omit<Product, 'id' | 'createdAt'>>(defaultProduct);
@@ -272,6 +280,46 @@ export default function AdminProductForm() {
             </div>
           </div>
 
+          {inventoryItems.length > 0 && (
+            <div className="bg-card border border-border p-6 md:p-8 rounded-2xl shadow-sm space-y-4">
+              <h2 className="text-xl font-black uppercase tracking-wider border-b border-border pb-2 flex items-center gap-2">
+                <Boxes className="w-5 h-5 text-secondary" /> Inventory Usage (Recipe)
+              </h2>
+              <p className="text-sm text-muted-foreground -mt-1">
+                Link inventory items that are consumed when this product is sold. These define the "recipe" used for automatic deductions.
+              </p>
+              {(formData.inventoryUsage ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">No inventory items linked. Add below to set up a recipe.</p>
+              ) : (
+                <div className="space-y-2">
+                  {(formData.inventoryUsage ?? []).map((usage, idx) => {
+                    const invItem = inventoryItems.find(i => i.id === usage.inventoryItemId);
+                    return (
+                      <div key={idx} className="flex items-center gap-3 bg-background rounded-xl p-3 border border-border">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-sm truncate">{invItem?.name ?? usage.inventoryItemId}</div>
+                          <div className="text-xs text-muted-foreground">{usage.quantityUsed} {UNIT_LABELS[usage.unit as InventoryUnit] ?? usage.unit} · {usage.deductTiming} · {usage.required ? 'required' : 'optional'}</div>
+                        </div>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 text-destructive" onClick={() => {
+                          handleChange('inventoryUsage', (formData.inventoryUsage ?? []).filter((_, i) => i !== idx));
+                        }}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="border border-dashed border-border rounded-xl p-4 space-y-3 bg-muted/10">
+                <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Add Inventory Item</p>
+                <AddUsageRow
+                  inventoryItems={inventoryItems}
+                  onAdd={(usage) => handleChange('inventoryUsage', [...(formData.inventoryUsage ?? []), usage])}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="bg-card border border-border p-6 md:p-8 rounded-2xl shadow-sm space-y-6">
             <h2 className="text-xl font-black uppercase tracking-wider mb-4 border-b border-border pb-2">Product Details</h2>
             
@@ -358,5 +406,70 @@ export default function AdminProductForm() {
 
       </form>
     </AdminLayout>
+  );
+}
+
+function AddUsageRow({ inventoryItems, onAdd }: {
+  inventoryItems: import('@/types').InventoryItem[];
+  onAdd: (u: InventoryUsageItem) => void;
+}) {
+  const [itemId, setItemId] = useState('');
+  const [qty, setQty] = useState('1');
+  const [unit, setUnit] = useState<InventoryUnit>('each');
+  const [timing, setTiming] = useState<InventoryDeductionTiming>('manual');
+  const [required, setRequired] = useState(true);
+
+  const selectedItem = inventoryItems.find(i => i.id === itemId);
+
+  const handleAdd = () => {
+    if (!itemId || !qty || parseFloat(qty) <= 0) return;
+    onAdd({ inventoryItemId: itemId, quantityUsed: parseFloat(qty), unit, deductTiming: timing, required });
+    setItemId('');
+    setQty('1');
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 items-end">
+      <div className="flex-1 min-w-[180px] space-y-1">
+        <Label className="text-xs font-bold">Inventory Item</Label>
+        <Select value={itemId} onValueChange={v => { setItemId(v); const i = inventoryItems.find(x => x.id === v); if (i) setUnit(i.unit); }}>
+          <SelectTrigger className="bg-background font-bold h-9 text-xs">
+            <SelectValue placeholder="Select item…" />
+          </SelectTrigger>
+          <SelectContent>
+            {inventoryItems.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="w-20 space-y-1">
+        <Label className="text-xs font-bold">Qty</Label>
+        <Input type="number" min={0.01} step="0.01" value={qty} onChange={e => setQty(e.target.value)} className="bg-background font-bold h-9 text-xs" />
+      </div>
+      <div className="w-24 space-y-1">
+        <Label className="text-xs font-bold">Unit</Label>
+        <Select value={unit} onValueChange={v => setUnit(v as InventoryUnit)}>
+          <SelectTrigger className="bg-background font-bold h-9 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="w-36 space-y-1">
+        <Label className="text-xs font-bold">Deduct When</Label>
+        <Select value={timing} onValueChange={v => setTiming(v as InventoryDeductionTiming)}>
+          <SelectTrigger className="bg-background font-bold h-9 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="on_order">On Order</SelectItem>
+            <SelectItem value="on_completion">On Completion</SelectItem>
+            <SelectItem value="manual">Manual</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center gap-2 pb-1">
+        <Label className="text-xs font-bold">Req.</Label>
+        <Switch checked={required} onCheckedChange={setRequired} />
+      </div>
+      <Button type="button" size="sm" onClick={handleAdd} disabled={!itemId} className="font-black h-9">
+        <Plus className="w-3.5 h-3.5 mr-1" /> Add
+      </Button>
+    </div>
   );
 }

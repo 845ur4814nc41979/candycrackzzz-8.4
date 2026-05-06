@@ -1,6 +1,69 @@
 export type ProductCategory = 'candy-grapes' | 'candy-pineapple' | 'party-trays' | 'seasonal' | 'custom' | 'donutzzz' | 'dirty-sodazzz';
 export type OrderStatus = 'new' | 'pending' | 'confirmed' | 'ready' | 'picked-up' | 'completed' | 'cancelled';
 
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+export type InventoryUnit =
+  | 'each' | 'oz' | 'lb' | 'gram' | 'gallon'
+  | 'bottle' | 'case' | 'box' | 'sleeve' | 'pack'
+  | 'bag' | 'roll' | 'other';
+
+export type InventoryCategory =
+  | 'ingredients' | 'candy-coating' | 'fruit' | 'toppings'
+  | 'drinks-soda' | 'donutzzz' | 'containers' | 'cups' | 'lids'
+  | 'bags' | 'labels' | 'utensils' | 'cleaning-prep' | 'misc';
+
+export type InventoryDeductionTiming = 'on_order' | 'on_completion' | 'manual';
+
+export interface InventoryUsageItem {
+  inventoryItemId: string;
+  quantityUsed: number;
+  unit: InventoryUnit;
+  note?: string;
+  required: boolean;
+  deductTiming: InventoryDeductionTiming;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: InventoryCategory;
+  unit: InventoryUnit;
+  currentQty: number;
+  lowStockThreshold: number;
+  reorderQty: number;
+  supplier?: string;
+  supplierLink?: string;
+  costPerUnit?: number;
+  notes?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type InventoryTransactionType =
+  | 'order_deduction' | 'manual_adjustment' | 'restock'
+  | 'waste' | 'correction' | 'return';
+
+export interface InventoryTransaction {
+  id: string;
+  inventoryItemId: string;
+  orderId?: string;
+  productId?: string;
+  transactionType: InventoryTransactionType;
+  quantityChange: number;
+  previousQty: number;
+  newQty: number;
+  reason?: string;
+  createdAt: string;
+  createdBy?: string;
+}
+
+export type InventoryDeductionStatus =
+  | 'not_deducted' | 'deducted' | 'partial' | 'failed' | 'reversed' | 'no_recipe';
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface Product {
   id: string;
   name: string;
@@ -19,6 +82,7 @@ export interface Product {
   isSoldOut: boolean;
   isVisible: boolean;
   createdAt: string;
+  inventoryUsage?: InventoryUsageItem[];
 }
 
 export interface CartItem {
@@ -94,6 +158,8 @@ export interface OrderRequest {
   employeeReferralBonusCalculatedAt?: string;
   total: number;
   createdAt: string;
+  inventoryDeductionStatus?: InventoryDeductionStatus;
+  inventoryDeductedAt?: string;
 }
 
 export interface SocialLinks {
@@ -386,4 +452,9 @@ export interface Settings {
   analyticsExcludeAdminRoutes: boolean;
   analyticsRetentionLimit: number;
   analyticsShowDashboardCard: boolean;
+  enableInventoryTracking: boolean;
+  inventoryDeductTiming: 'on_order' | 'on_completion' | 'manual';
+  inventoryAllowNegative: boolean;
+  inventoryShowLowStockAlerts: boolean;
+  inventoryDefaultLowStockThreshold: number;
 }

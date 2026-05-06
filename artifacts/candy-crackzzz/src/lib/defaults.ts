@@ -1,4 +1,4 @@
-import type { MerchItem, Product, RewardsCampaign, Settings } from '../types';
+import type { MerchItem, Product, RewardsCampaign, Settings, InventoryItem } from '../types';
 
 export const defaultSettings: Settings = {
   businessName: 'Candy Crackzzz',
@@ -118,6 +118,11 @@ export const defaultSettings: Settings = {
   analyticsExcludeAdminRoutes: true,
   analyticsRetentionLimit: 5000,
   analyticsShowDashboardCard: true,
+  enableInventoryTracking: false,
+  inventoryDeductTiming: 'manual' as const,
+  inventoryAllowNegative: false,
+  inventoryShowLowStockAlerts: true,
+  inventoryDefaultLowStockThreshold: 10,
 };
 
 export const sampleProducts: Product[] = [
